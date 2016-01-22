@@ -1,0 +1,3 @@
+[submodule "tempest"]
+	path = tempest
+	url = https://github.com/openstack/tempest/
