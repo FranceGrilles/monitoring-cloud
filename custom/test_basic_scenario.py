@@ -110,7 +110,7 @@ class TestBasicScenario(manager.ScenarioTest):
                    '%s' % (secgroup['id'], server['id']))
             raise exceptions.TimeoutException(msg)
 
-    @test.idempotent_id('635e934c-448e-43c4-acbf-ab3e7f2cdad0')
+    @test.idempotent_id('73f55e7b-a40e-4cd3-9b2d-0718b20aac6c')
     @test.services('compute', 'volume', 'image', 'network')
     def test_basic_scenario(self):
 

@@ -39,7 +39,7 @@ class TestBasicValues(manager.ScenarioTest):
 
     """
 
-    @test.idempotent_id('35e934c6-48e4-43c4-cbfa-b3e7f2c0000a')
+    @test.idempotent_id('6e11ab77-7b15-4871-8497-5b17c8775654')
     @test.services('compute', 'volume', 'image', 'network')
     def test_basic_values_true(self):
         time.sleep(2)
@@ -48,17 +48,16 @@ class TestBasicValues(manager.ScenarioTest):
         LOG.critical("crit message in OK")
         self.assertEqual(4, 2 * 2)
 
-    @test.idempotent_id('35e934c6-48e4-43c4-cbfa-b3e7f2cdad0a')
+    @test.idempotent_id('44c2b63d-b062-4082-8dbb-4c6bbd9ca68f')
     @test.services('compute', 'volume', 'image', 'network')
     def test_basic_values_false(self):
 
         LOG.warn("warn message in FAILED 1")
         self.assertEqual(5, 2 * 2)
 
-    @test.idempotent_id('35e934c6-48e4-43c4-cbfa-b3e7f2bdad0a')
+    @test.idempotent_id('7c89fbfd-cd86-487b-a241-54ec732e5569')
     @test.services('compute', 'volume', 'image', 'network')
     def test_basic_values_false2(self):
 
         LOG.critical("crit message in FAILED 2")
         self.assertEqual(6, 2 * 2)
-
