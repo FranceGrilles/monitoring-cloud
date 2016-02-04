@@ -32,6 +32,7 @@ STATUS_WARNING=1
 STATUS_CRITICAL=2
 STATUS_UNKNOWN=3
 STATUS_DEPENDENT=4
+STATUS_ALL="OWCUD"
 SUBUNIT_TRACE="$TEMPEST/.venv/bin/subunit-trace"
 
 # Functions
@@ -103,7 +104,7 @@ runExit () {
     OUTPUT="$2"
     PERFDATA="$3"
 
-    echo -e "$OUTPUT\nStatus : $STATUS|$PERFDATA"
+    printf "$OUTPUT\nStatus : $STATUS (%s)|$PERFDATA" $(echo ${STATUS_ALL:$STATUS:1})
     cd $OLDPWD
     exit $STATUS
 }
@@ -113,7 +114,7 @@ runOneTest () {
 
     # Running a single test using subunit.run
     # Redirecting output and error to subunit-trace then $STREAM
-    STREAM=$($RUN_CMD python -m subunit.run $TEST_ID 2>&1 | $SUBUNIT_TRACE)
+    STREAM=`$RUN_CMD python -m subunit.run $TEST_ID 2>&1 | $SUBUNIT_TRACE`
     STATUS=$?
 
     getPerfData "$STREAM" $STATUS
@@ -124,7 +125,7 @@ runRegexTests () {
 
     # Running many tests using ostestr with a regex
     # Redirecting output and error to subunit-trace then $STREAM
-    STREAM=$($RUN_CMD ostestr --no-slowest --no-pretty --subunit --regex $REGEX 2>&1 | $SUBUNIT_TRACE)
+    STREAM=`$RUN_CMD ostestr --serial --no-slowest --no-pretty --subunit --regex $REGEX 2>&1 | $SUBUNIT_TRACE`
     STATUS=$?
 
     # Have to filter the output because of ostestr auto discovery when using regex
@@ -158,7 +159,6 @@ initEnv () {
     fi
 
     ${RUN_CMD} find $TEMPEST -type f -name "*.pyc" -delete
-    export OS_TEST_PATH=$TEMPEST/test_discover
 
 }
 
