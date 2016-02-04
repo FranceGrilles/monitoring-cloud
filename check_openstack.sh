@@ -104,7 +104,7 @@ runExit () {
     OUTPUT="$2"
     PERFDATA="$3"
 
-    printf "$OUTPUT\nStatus : $STATUS (%s)|$PERFDATA" $(echo ${STATUS_ALL:$STATUS:1})
+    echo -e "$OUTPUT\nStatus : $STATUS (${STATUS_ALL:$STATUS:1})|$PERFDATA" 
     cd $OLDPWD
     exit $STATUS
 }
