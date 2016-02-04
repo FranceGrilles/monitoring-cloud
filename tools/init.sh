@@ -84,6 +84,7 @@ fi
 cd ..
 
 # Finally, copy the premade scripts to tempest working dir
-ln -s $RUNDIR/custom/* $TEMPEST/tempest/scenario/
+cp -al $RUNDIR/custom/test_api_compute* $TEMPEST/tempest/api/compute/
+cp -al $RUNDIR/custom/* $TEMPEST/tempest/scenario/
 
 ## EOF
