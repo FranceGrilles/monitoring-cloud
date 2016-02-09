@@ -52,132 +52,183 @@ class IsolationTestRun(base.BaseV2ComputeTest):
     def setup_clients(cls):
         super(IsolationTestRun, cls).setup_clients()
         cls.client = cls.os.servers_client
+        cls.compute_images_client = cls.os.compute_images_client
+        cls.glance_client = cls.os.image_client
+        cls.keypairs_client = cls.os.keypairs_client
+        cls.security_client = cls.os.compute_security_groups_client
+        cls.rule_client = cls.os.compute_security_group_rules_client
 
     @classmethod
     def resource_setup(cls):
         super(IsolationTestRun, cls).resource_setup()
 
+        print "waiting..."
         while not os.path.exists(file_path):
-            time.sleep(1)
+            time.sleep(3)
         f = open(file_path)
-        server = json.load(f)
+        fileinfo = json.load(f)
         f.close()
 
-        cls.server = cls.client.show_server(server['id'])['server']
+        cls.server=fileinfo['server']
+        cls.image=fileinfo['image']
+        cls.keypairname=fileinfo['keypairname']
+        cls.security_group=fileinfo['security_group']
+        cls.rule=fileinfo['rule']
+
 
     @classmethod
     def resource_cleanup(cls):
-        if hasattr(cls, 'image'):
-            cls.compute_images_client.delete_image(cls.image['id'])
-        if hasattr(cls, 'keypairname'):
-            cls.keypairs_client.delete_keypair(cls.keypairname)
-        if hasattr(cls, 'security_group'):
-            cls.security_client.delete_security_group(cls.security_group['id'])
-        os.remove(file_path)
+        #os.remove(file_path)
         super(IsolationTestRun, cls).resource_cleanup()
 
 ###############################################################################
 
     def test_get_server_for_alt_account(self):
-        self.assertTrue(self.client.show_server(self.server['id']))
+        self.assertTrue(self.client.show_server, self.server['id'])
 
     @test.attr(type=['negative'])
     def test_delete_server_for_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden, self.client.delete_server,
                           self.server['id'])
 
+    @test.attr(type=['negative'])
     def test_update_server_for_alt_account_fails(self):
+        # An update server request for another user's server should fail
         self.assertRaises(lib_exc.Forbidden, self.client.update_server,
-                          self.server['id'], name='test_update')
+                          self.server['id'], name='test')
 
     def test_list_server_addresses_for_alt_account(self):
-        self.assertTrue(self.client.list_addresses(self.server['id']))
+        self.assertTrue(self.client.list_addresses, self.server['id'])
 
-    def test_list_server_addresses_by_network_for_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden,
-                          self.client.list_addresses_by_network,
-                          self.server['id'],
-                          'public')
+    def test_list_server_addresses_by_network_for_alt_account(self):
+        server_id = self.server['id']
+        self.assertTrue(self.client.list_addresses_by_network, self.server['id'])
 
+    @test.attr(type=['negative'])
     def test_change_password_for_alt_account_fails(self):
+        # A change password request for another user's server should fail
         self.assertRaises(lib_exc.Forbidden, self.client.change_password,
                           self.server['id'], adminPass='newpass')
 
+    @test.attr(type=['negative'])
     def test_reboot_server_for_alt_account_fails(self):
+        # A reboot request for another user's server should fail
         self.assertRaises(lib_exc.Forbidden, self.client.reboot_server,
                           self.server['id'], type='HARD')
 
+    @test.attr(type=['negative'])
     def test_rebuild_server_for_alt_account_fails(self):
+        # A rebuild request for another user's server should fail
         self.assertRaises(lib_exc.Forbidden, self.client.rebuild_server,
                           self.server['id'], self.image_ref_alt)
 
+    @test.attr(type=['negative'])
     def test_resize_server_for_alt_account_fails(self):
+        # A resize request for another user's server should fail
         self.assertRaises(lib_exc.Forbidden, self.client.resize_server,
                           self.server['id'], self.flavor_ref_alt)
 
+    @test.attr(type=['negative'])
     def test_create_image_for_alt_account_fails(self):
+        # A create image request for another user's server should fail
         self.assertRaises(lib_exc.Forbidden,
-                          self.alt_compute_images_client.create_image,
+                          self.compute_images_client.create_image,
                           self.server['id'], name='testImage')
 
-    def test_create_server_with_unauthorized_image(self):
+    @test.attr(type=['negative'])
+    def test_create_server_with_unauthorized_image_fails(self):
+        # Server creation with another user's image should fail
         self.assertRaises(lib_exc.BadRequest, self.client.create_server,
                           name='test', imageRef=self.image['id'],
                           flavorRef=self.flavor_ref)
-    def test_create_server_fails_when_tenant_incorrect(self):
-        # BUG(sdague): this test should fail because of bad auth url,
-        # which means that when we run with a service catalog without
-        # project_id in the urls, it should fail to fail, and thus
-        # fail the test. It does not.
-        #
-        # The 400 BadRequest is clearly ambiguous, and something else
-        # is wrong about this request. This should be fixed.
-        #
-        # A create server request should fail if the tenant id does not match
-        # the current user
-        # Change the base URL to impersonate another user
-        self.client.auth_provider.set_alt_auth_data(
-            request_part='url',
-            auth_data=self.client.auth_provider.auth_data
-        )
-        self.assertRaises(lib_exc.BadRequest,
-                          self.client.create_server, name='test',
-                          imageRef=self.image['id'], flavorRef=self.flavor_ref)
 
+    @test.attr(type=['negative'])
     def test_get_keypair_of_alt_account_fails(self):
         # A GET request for another user's keypair should fail
-        self.assertRaises(lib_exc.Forbidden,
-                          self.alt_keypairs_client.show_keypair,
+        self.assertRaises(lib_exc.NotFound,
+                          self.keypairs_client.show_keypair,
                           self.keypairname)
 
+    @test.attr(type=['negative'])
     def test_delete_keypair_of_alt_account_fails(self):
         # A DELETE request for another user's keypair should fail
-        self.assertRaises(lib_exc.Forbidden,
-                          self.alt_keypairs_client.delete_keypair,
+        self.assertRaises(lib_exc.NotFound,
+                          self.keypairs_client.delete_keypair,
                           self.keypairname)
 
-    def test_get_image_for_alt_account_fails(self):
-        # A GET request for an image on another user's account should fail
-        self.assertRaises(lib_exc.Forbidden,
-                          self.alt_compute_images_client.show_image,
-                          self.image['id'])
+    def test_get_image_for_alt_account(self):
+        self.assertTrue(self.compute_images_client.show_image,
+                        self.image['id'])
 
-    def test_delete_image_for_alt_account_fails(self):
-        # A DELETE request for another user's image should fail
-        self.assertRaises(lib_exc.Forbidden,
-                          self.alt_compute_images_client.delete_image,
-                          self.image['id'])
+#    @test.attr(type=['negative'])
+#    def test_delete_image_for_alt_account_fails(self):
+#        # A DELETE request for another user's image should fail
+#        self.assertRaises(lib_exc.NotFound,
+#                          self.compute_images_client.delete_image,
+#                          self.image['id'])
 
-    def test_get_security_group_of_alt_account_fails(self):
-        # A GET request for another user's security group should fail
-        self.assertRaises(lib_exc.Forbidden,
-                          self.alt_security_client.show_security_group,
-                          self.security_group['id'])
+    def test_get_security_group_of_alt_account(self):
+        self.assertTrue(self.security_client.show_security_group,
+                        self.security_group['id'])
 
-    def test_delete_security_group_of_alt_account_fails(self):
-        # A DELETE request for another user's security group should fail
+#    def test_delete_security_group_of_alt_account_fails(self):
+#        # A DELETE request for another user's security group should fail
+#        self.assertRaises(lib_exc.NotFound,
+#                          self.security_client.delete_security_group,
+#                          self.security_group['id'])
+
+#    def test_delete_security_group_rule_of_alt_account_fails(self):
+#        # A DELETE request for another user's security group rule
+#        # should fail
+#        self.assertRaises(lib_exc.NotFound,
+#                          self.rule_client.delete_security_group_rule,
+#                          self.rule['id'])
+
+    def test_set_metadata_of_alt_account_server_fails(self):
+        # A set metadata for another user's server should fail
+        req_metadata = {'meta1': 'tempest-server-data1', 'meta2': 'tempest-server-data2'}
         self.assertRaises(lib_exc.Forbidden,
-                          self.alt_security_client.delete_security_group,
-                          self.security_group['id'])
+                          self.client.set_server_metadata,
+                          self.server['id'],
+                          req_metadata)
+
+#    def test_set_metadata_of_alt_account_image_fails(self):
+#        # A set metadata for another user's image should fail
+#        req_metadata = {'meta1': 'tempest-image-value1', 'meta2': 'tempest-image-value2'}
+#        self.assertRaises(lib_exc.Forbidden,
+#                          self.compute_images_client.set_image_metadata,
+#                          self.image['id'], req_metadata)
+
+    def test_get_metadata_of_alt_account_server_fails(self):
+        # A get metadata for another user's server should fail
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.show_server_metadata_item,
+                          self.server['id'], 'meta1')
+
+    def test_get_metadata_of_alt_account_image_fails(self):
+        # A get metadata for another user's image should fail
+        self.assertRaises(
+            lib_exc.NotFound,
+            self.compute_images_client.show_image_metadata_item,
+            self.image['id'], 'meta1')
+
+    def test_delete_metadata_of_alt_account_server_fails(self):
+        # A delete metadata for another user's server should fail
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.delete_server_metadata_item,
+                          self.server['id'], 'meta1')
+
+#    def test_delete_metadata_of_alt_account_image_fails(self):
+#        # A delete metadata for another user's image should fail
+#        self.assertRaises(
+#            lib_exc.NotFound,
+#            self.compute_images_client.delete_image_metadata_item,
+#            self.image['id'], 'meta1')
+
+    def test_get_console_output_of_alt_account_server_fails(self):
+        # A Get Console Output for another user's server should fail
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.get_console_output,
+                          self.server['id'], length=10)
 
 ##EOF
