@@ -992,11 +992,11 @@ floating_network_name = ext-net
 #
 
 # Directory containing image files (string value)
-img_dir = /home/user/cloud_images/
+#img_dir = /home/user/cloud_images/
 
 # Image file name (string value)
 # Deprecated group/name - [DEFAULT]/qcow2_img_file
-img_file = cirros-0.3.4-x86_64-disk.img
+#img_file = cirros-0.3.4-x86_64-disk.img
 
 # Image disk format (string value)
 #img_disk_format = qcow2
@@ -1009,13 +1009,13 @@ img_file = cirros-0.3.4-x86_64-disk.img
 #img_properties = <None>
 
 # AMI image file name (string value)
-ami_img_file = cirros-0.3.4-x86_64-blank.img
+#ami_img_file = cirros-0.3.4-x86_64-blank.img
 
 # ARI image file name (string value)
-ari_img_file = cirros-0.3.4-x86_64-initrd
+#ari_img_file = cirros-0.3.4-x86_64-initrd
 
 # AKI image file name (string value)
-aki_img_file = cirros-0.3.4-x86_64-vmlinuz
+#aki_img_file = cirros-0.3.4-x86_64-vmlinuz
 
 # specifies how many resources to request at once. Used for large
 # operations testing. (integer value)
