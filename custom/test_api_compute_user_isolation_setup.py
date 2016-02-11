@@ -16,23 +16,20 @@
 import json
 import os.path
 import six
-import sys
 import time
 
 from oslo_log import log as logging
-from tempest_lib import auth
-from tempest_lib import exceptions as lib_exc
 
 from tempest.api.compute import base
 from tempest.common.utils import data_utils
-from tempest import clients
 from tempest import config
 from tempest import test
 
 CONF = config.CONF
-file_path='/tmp/tempest_temp_info_wXBQq8Vn'
+file_path = '/tmp/tempest_temp_info_wXBQq8Vn'
 LOG = logging.getLogger(__name__)
 fileinfo = {}
+
 
 class IsolationTestSetup(base.BaseV2ComputeTest):
 
@@ -83,16 +80,16 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
         super(IsolationTestSetup, cls).resource_setup()
 
         if os.path.exists(file_path):
-            print "/!\\ deleting previous file /!\\"
+            print ("/!\\ deleting previous file /!\\")
             os.remove(file_path)
 
-        print "setting up server..."
+        print ("setting up server...")
         server = cls.create_test_server(wait_until='ACTIVE')
 
-        print "server created and active"
+        print ("server created and active")
         cls.server = cls.client.show_server(server['id'])['server']
         fileinfo['server'] = cls.server
-        
+
         name = data_utils.rand_name('image')
         body = cls.glance_client.create_image(name=name,
                                               container_format='bare',
@@ -123,12 +120,12 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
         cls.rule = cls.rule_client.create_security_group_rule(
             parent_group_id=parent_group_id, ip_protocol=ip_protocol,
             from_port=from_port, to_port=to_port)['security_group_rule']
-        fileinfo['rule']=cls.rule
+        fileinfo['rule'] = cls.rule
 
-        f = open(file_path,'w')
+        f = open(file_path, 'w')
         json.dump(fileinfo, f)
         f.close()
-        print "file created, waiting..."
+        print ("file created, waiting...")
 
     @classmethod
     def resource_cleanup(cls):
@@ -144,8 +141,9 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
             cls.client.delete_server(cls.server['id'])
         super(IsolationTestSetup, cls).resource_cleanup()
 
+    @test.idempotent_id('90294316-dfd1-405c-88d3-227bdb52f0d4')
     def test_wait_for_test_to_terminate(self):
         while os.path.exists(file_path):
             time.sleep(3)
 
-##EOF
+# EOF
