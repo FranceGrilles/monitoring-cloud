@@ -26,7 +26,7 @@ from tempest import config
 from tempest import test
 
 CONF = config.CONF
-file_path = '/tmp/tempest_temp_info_wXBQq8Vn'
+file_path = '/tmp/ztempest_temp_info_wXBQq8Vn'
 LOG = logging.getLogger(__name__)
 fileinfo = {}
 
@@ -45,24 +45,6 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
     def setup_credentials(cls):
         # No network resources required for this test
         cls.set_network_resources()
-        '''
-        _creds = auth.KeystoneV2Credentials(
-            username="tempest_user_1",
-            password="FHNSMd7QyNo9L4ow",
-            tenant_name="tempest_tenant_1")
-        auth_params = {
-            'disable_ssl_certificate_validation':
-                CONF.identity.disable_ssl_certificate_validation,
-            'ca_certs': CONF.identity.ca_certificates_file,
-            'trace_requests': CONF.debug.trace_requests
-        }
-        _auth = auth.KeystoneV2AuthProvider(
-            _creds, CONF.identity.uri, **auth_params)
-
-        _manager=clients.Manager(credentials=_creds)
-        # Setup some common aliases
-        cls.os = _manager
-        '''
         super(IsolationTestSetup, cls).setup_credentials()
 
     @classmethod
@@ -80,13 +62,13 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
         super(IsolationTestSetup, cls).resource_setup()
 
         if os.path.exists(file_path):
-            print ("/!\\ deleting previous file /!\\")
+            LOG.info("/!\\ deleting previous file /!\\")
             os.remove(file_path)
 
-        print ("setting up server...")
+        LOG.info("setting up server...")
         server = cls.create_test_server(wait_until='ACTIVE')
 
-        print ("server created and active")
+        LOG.info("server created and active")
         cls.server = cls.client.show_server(server['id'])['server']
         fileinfo['server'] = cls.server
 
@@ -102,16 +84,19 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
         cls.glance_client.wait_for_image_status(image_id, 'active')
         cls.image = cls.compute_images_client.show_image(image_id)['image']
         fileinfo['image'] = cls.image
+        LOG.info("glance image created and active")
 
         cls.keypairname = data_utils.rand_name('keypair')
         fileinfo['keypairname'] = cls.keypairname
         cls.keypairs_client.create_keypair(name=cls.keypairname)
+        LOG.info("keypair created")
 
         name = data_utils.rand_name('security')
         description = data_utils.rand_name('description')
         cls.security_group = cls.security_client.create_security_group(
             name=name, description=description)['security_group']
         fileinfo['security_group'] = cls.security_group
+        LOG.info("security group created")
 
         parent_group_id = cls.security_group['id']
         ip_protocol = 'tcp'
@@ -121,11 +106,12 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
             parent_group_id=parent_group_id, ip_protocol=ip_protocol,
             from_port=from_port, to_port=to_port)['security_group_rule']
         fileinfo['rule'] = cls.rule
+        LOG.info("security rule created")
 
         f = open(file_path, 'w')
         json.dump(fileinfo, f)
         f.close()
-        print ("file created, waiting...")
+        LOG.info("file created with ids, waiting...")
 
     @classmethod
     def resource_cleanup(cls):

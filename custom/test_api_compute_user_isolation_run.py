@@ -25,7 +25,7 @@ from tempest import config
 from tempest import test
 
 CONF = config.CONF
-file_path = '/tmp/tempest_temp_info_wXBQq8Vn'
+file_path = '/tmp/ztempest_temp_info_wXBQq8Vn'
 LOG = logging.getLogger(__name__)
 
 
@@ -59,7 +59,7 @@ class IsolationTestRun(base.BaseV2ComputeTest):
     def resource_setup(cls):
         super(IsolationTestRun, cls).resource_setup()
 
-        print ("waiting...")
+        LOG.info("waiting for setup to run...")
         while not os.path.exists(file_path):
             time.sleep(3)
         f = open(file_path)
@@ -74,7 +74,7 @@ class IsolationTestRun(base.BaseV2ComputeTest):
 
     @classmethod
     def resource_cleanup(cls):
-        # os.remove(file_path)
+        os.remove(file_path)
         super(IsolationTestRun, cls).resource_cleanup()
 
 ###############################################################################
@@ -84,17 +84,11 @@ class IsolationTestRun(base.BaseV2ComputeTest):
         self.assertTrue(self.client.show_server, self.server['id'])
 
     @test.attr(type=['negative'])
-    @test.idempotent_id('e60e34c2-b05d-40f4-910b-85de186f9bbc')
-    def test_delete_server_for_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.delete_server,
-                          self.server['id'])
-
-    @test.attr(type=['negative'])
     @test.idempotent_id('4407198c-9cb9-4e4a-a90c-40de5e3d6248')
     def test_update_server_for_alt_account_fails(self):
         # An update server request for another user's server should fail
         self.assertRaises(lib_exc.Forbidden, self.client.update_server,
-                          self.server['id'], name='test')
+                          self.server['id'], name='tempest_test_rename')
 
     @test.idempotent_id('3d09a432-f9bf-4ace-ba42-8c27f77018c4')
     def test_list_server_addresses_for_alt_account(self):
@@ -111,27 +105,6 @@ class IsolationTestRun(base.BaseV2ComputeTest):
         # A change password request for another user's server should fail
         self.assertRaises(lib_exc.Forbidden, self.client.change_password,
                           self.server['id'], adminPass='newpass')
-
-    @test.attr(type=['negative'])
-    @test.idempotent_id('24c79574-54cf-45f8-aec5-a5d26b2e1667')
-    def test_reboot_server_for_alt_account_fails(self):
-        # A reboot request for another user's server should fail
-        self.assertRaises(lib_exc.Forbidden, self.client.reboot_server,
-                          self.server['id'], type='HARD')
-
-    @test.attr(type=['negative'])
-    @test.idempotent_id('9422de9d-2884-480d-8ec1-50f9812f066d')
-    def test_rebuild_server_for_alt_account_fails(self):
-        # A rebuild request for another user's server should fail
-        self.assertRaises(lib_exc.Forbidden, self.client.rebuild_server,
-                          self.server['id'], self.image_ref_alt)
-
-    @test.attr(type=['negative'])
-    @test.idempotent_id('3aa96f2c-3f11-4349-b8cb-6265717f4096')
-    def test_resize_server_for_alt_account_fails(self):
-        # A resize request for another user's server should fail
-        self.assertRaises(lib_exc.Forbidden, self.client.resize_server,
-                          self.server['id'], self.flavor_ref_alt)
 
     @test.attr(type=['negative'])
     @test.idempotent_id('68cf02b8-42ca-4644-b3f5-b78347e01a45')
@@ -242,6 +215,7 @@ class IsolationTestRun(base.BaseV2ComputeTest):
 #            self.compute_images_client.delete_image_metadata_item,
 #            self.image['id'], 'meta1')
 
+    @test.attr(type=['negative'])
     @test.idempotent_id('0980be9f-1f82-4687-891c-61f1ed2df085')
     def test_get_console_output_of_alt_account_server_fails(self):
         # A Get Console Output for another user's server should fail
@@ -249,4 +223,30 @@ class IsolationTestRun(base.BaseV2ComputeTest):
                           self.client.get_console_output,
                           self.server['id'], length=10)
 
+    @test.attr(type=['negative'])
+    @test.idempotent_id('9422de9d-2884-480d-8ec1-50f9812f066d')
+    def test_rebuild_server_for_alt_account_fails(self):
+        # A rebuild request for another user's server should fail
+        self.assertRaises(lib_exc.Forbidden, self.client.rebuild_server,
+                          self.server['id'], self.image_ref_alt)
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('3aa96f2c-3f11-4349-b8cb-6265717f4096')
+    def test_resize_server_for_alt_account_fails(self):
+        # A resize request for another user's server should fail
+        self.assertRaises(lib_exc.Forbidden, self.client.resize_server,
+                          self.server['id'], self.flavor_ref_alt)
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('24c79574-54cf-45f8-aec5-a5d26b2e1667')
+    def test_reboot_server_for_alt_account_fails(self):
+        # A reboot request for another user's server should fail
+        self.assertRaises(lib_exc.Forbidden, self.client.reboot_server,
+                          self.server['id'], type='HARD')
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('e60e34c2-b05d-40f4-910b-85de186f9bbc')
+    def test_delete_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.delete_server,
+                          self.server['id'])
 # EOF
