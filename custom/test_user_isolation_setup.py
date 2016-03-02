@@ -31,13 +31,13 @@ LOG = logging.getLogger(__name__)
 fileinfo = {}
 
 
-class IsolationTestSetup(base.BaseV2ComputeTest):
+class UserIsolationSetup(base.BaseV2ComputeTest):
 
     credentials = ['primary']
 
     @classmethod
     def skip_checks(cls):
-        super(IsolationTestSetup, cls).skip_checks()
+        super(UserIsolationSetup, cls).skip_checks()
         if not CONF.service_available.glance:
             raise cls.skipException('Glance is not available.')
 
@@ -45,11 +45,11 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
     def setup_credentials(cls):
         # No network resources required for this test
         cls.set_network_resources()
-        super(IsolationTestSetup, cls).setup_credentials()
+        super(UserIsolationSetup, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):
-        super(IsolationTestSetup, cls).setup_clients()
+        super(UserIsolationSetup, cls).setup_clients()
         cls.client = cls.os.servers_client
         cls.compute_images_client = cls.os.compute_images_client
         cls.glance_client = cls.os.image_client
@@ -59,7 +59,7 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
 
     @classmethod
     def resource_setup(cls):
-        super(IsolationTestSetup, cls).resource_setup()
+        super(UserIsolationSetup, cls).resource_setup()
 
         if os.path.exists(file_path):
             LOG.info("/!\\ deleting previous file /!\\")
@@ -125,7 +125,7 @@ class IsolationTestSetup(base.BaseV2ComputeTest):
             os.remove(file_path)
         if hasattr(cls, 'server'):
             cls.client.delete_server(cls.server['id'])
-        super(IsolationTestSetup, cls).resource_cleanup()
+        super(UserIsolationSetup, cls).resource_cleanup()
 
     @test.idempotent_id('90294316-dfd1-405c-88d3-227bdb52f0d4')
     def test_wait_for_test_to_terminate(self):

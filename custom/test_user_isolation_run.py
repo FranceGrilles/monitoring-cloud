@@ -29,13 +29,13 @@ file_path = '/tmp/ztempest_temp_info_wXBQq8Vn'
 LOG = logging.getLogger(__name__)
 
 
-class IsolationTestRun(base.BaseV2ComputeTest):
+class UserIsolationRun(base.BaseV2ComputeTest):
 
     credentials = ['primary']
 
     @classmethod
     def skip_checks(cls):
-        super(IsolationTestRun, cls).skip_checks()
+        super(UserIsolationRun, cls).skip_checks()
         if not CONF.service_available.glance:
             raise cls.skipException('Glance is not available.')
 
@@ -43,11 +43,11 @@ class IsolationTestRun(base.BaseV2ComputeTest):
     def setup_credentials(cls):
         # No network resources required for this test
         cls.set_network_resources()
-        super(IsolationTestRun, cls).setup_credentials()
+        super(UserIsolationRun, cls).setup_credentials()
 
     @classmethod
     def setup_clients(cls):
-        super(IsolationTestRun, cls).setup_clients()
+        super(UserIsolationRun, cls).setup_clients()
         cls.client = cls.os.servers_client
         cls.compute_images_client = cls.os.compute_images_client
         cls.glance_client = cls.os.image_client
@@ -57,7 +57,7 @@ class IsolationTestRun(base.BaseV2ComputeTest):
 
     @classmethod
     def resource_setup(cls):
-        super(IsolationTestRun, cls).resource_setup()
+        super(UserIsolationRun, cls).resource_setup()
 
         LOG.info("waiting for setup to run...")
         while not os.path.exists(file_path):
@@ -75,7 +75,7 @@ class IsolationTestRun(base.BaseV2ComputeTest):
     @classmethod
     def resource_cleanup(cls):
         os.remove(file_path)
-        super(IsolationTestRun, cls).resource_cleanup()
+        super(UserIsolationRun, cls).resource_cleanup()
 
 ###############################################################################
 
