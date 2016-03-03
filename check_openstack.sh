@@ -59,10 +59,15 @@ getPerfData () {
     STATUS=$2
 
     # Filter output to get values
+    echo "$STREAM" > /tmp/stream
+
+    if [ "$STREAM" == "The test run didn't actually run any tests" ]; then 
+        runExit $STATUS_UNKNOWN "$STREAM" "time=0, nb_tests=0, nb_tests_ok=0, nb_tests_ko=0, nb_skipped=0"        
+    fi
 
     # List tests status and ids + all errors from tempest's tests (see tempest.conf/[DEFAULT]/default_log_levels)
     SUMMARY=$(echo "$STREAM" | awk '/^\{/ {print $5,$2,$3} /^2[0-9][0-9][0-9]-/ {$1=$2=$3=""; print $0}')
-    TIME=$(echo "$STREAM" | awk '/^Sum\ of/ {print $8}')
+    TIME=$(echo "$STREAM" | awk '/^Ran:.*tests\ in/ {print $5}')
     PASSED=$(echo "$STREAM" | awk '/^\ -\ Passed:/ {print $3}')
     SKIPPED=$(echo "$STREAM" | awk '/^\ -\ Skipped:/ {print $3}')
     EXFAIL=$(echo "$STREAM" | awk '/^\ -\ Expected\ Fail:/ {print $4}')
@@ -125,7 +130,7 @@ runRegexTests () {
 
     # Running many tests using ostestr with a regex
     # Redirecting output and error to subunit-trace then $STREAM
-    STREAM=`$RUN_CMD ostestr --serial --no-slowest --no-pretty --subunit --regex $REGEX 2>&1 | $SUBUNIT_TRACE`
+    STREAM=`$RUN_CMD ostestr --parallel --no-slowest --no-pretty --subunit --regex $REGEX 2>&1 | $SUBUNIT_TRACE`
     STATUS=$?
 
     # Have to filter the output because of ostestr auto discovery when using regex

@@ -18,9 +18,9 @@ import os.path
 import time
 
 from oslo_log import log as logging
-from tempest_lib import exceptions as lib_exc
 
 from tempest.api.compute import base
+from tempest.lib import exceptions as lib_exc
 from tempest import config
 from tempest import test
 
@@ -59,9 +59,10 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     def resource_setup(cls):
         super(UserIsolationRun, cls).resource_setup()
 
-        LOG.info("waiting for setup to run...")
+        LOG.info("Waiting for VM to get ready...")
         while not os.path.exists(file_path):
             time.sleep(3)
+
         f = open(file_path)
         fileinfo = json.load(f)
         f.close()
@@ -71,6 +72,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         cls.keypairname = fileinfo['keypairname']
         cls.security_group = fileinfo['security_group']
         cls.rule = fileinfo['rule']
+
+        LOG.info("Running isolation tests from user B...")
 
     @classmethod
     def resource_cleanup(cls):

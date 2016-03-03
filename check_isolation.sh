@@ -40,15 +40,16 @@ usage () {
 runMain () {
     {
     echo "Lauching a VM with user A..."
-    ./check_openstack.sh -c $CONF_FILE_A -- tempest.api.compute.test_api_compute_user_isolation_setup 2>&1 > /dev/null
+    ./check_openstack.sh -c $CONF_FILE_A -- tempest.fgcloud.test_user_isolation_setup 2>&1 > /dev/null
     } &
 
+    sleep 5
     echo "Waiting for VM to get ready..."
     sleep 20
 
     {
     echo "Running isolation tests from user B..."
-    ./check_openstack.sh -c $CONF_FILE_B -- tempest.api.compute.test_api_compute_user_isolation_run
+    ./check_openstack.sh -c $CONF_FILE_B -- tempest.fgcloud.test_user_isolation_run
     } &
 
     wait
