@@ -60,6 +60,7 @@ class TestBasicValues(manager.ScenarioTest):
         LOG.critical("crit message in FAILED 2")
         self.assertEqual(6, 2 * 2)
 
+    @test.idempotent_id('c45e06e2-e508-4ca3-8cce-9c56c42c1752')
     @testtools.skipIf(1,'Skipped Test')
     def test_basic_values_skipped(self):
         LOG.info("skipped test")
