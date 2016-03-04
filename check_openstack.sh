@@ -20,10 +20,11 @@
 ##############################################################################
 
 # Default values
-MAXTIME=120
+MAXTIME=180
 CONF_FILE="config/tempest.conf"
 
 # Other variables
+BLFILE="config/tests_blacklist.txt"
 DIRNAME="$( cd "$(dirname "$0")" ; pwd -P )"
 TEMPEST=$DIRNAME/tempest
 RUN_CMD="$TEMPEST/tools/with_venv.sh"
@@ -32,7 +33,7 @@ STATUS_WARNING=1
 STATUS_CRITICAL=2
 STATUS_UNKNOWN=3
 STATUS_DEPENDENT=4
-STATUS_ALL="OWCUD"
+STATUS_ALL=('OK' 'WARNING' 'CRITICAL' 'UNKNOWN' 'DEPENDENT')
 SUBUNIT_TRACE="$TEMPEST/.venv/bin/subunit-trace"
 
 # Functions
@@ -45,7 +46,7 @@ usage () {
     echo "  -c, --config <path_to_file>     Use a custom tempest.conf file location (default : config/tempest.conf)"
     echo "  -e, --regex '^tempest\.regex'   Launch tests according to the regex (better in quotes)"
     echo "  -h, --help                      Print this usage message"
-    echo "  -t, --timeout <time_in_sec>     Raise a WARNING if the test(s) run longer (default : 120s)"
+    echo "  -t, --timeout <time_in_sec>     Raise a WARNING if the test(s) run longer (default : 180s)"
     echo "  -u, --update                    Update the virtual environment"
     echo "  -- <single.test.to.run>         After any other options add a double dash following a test.name.to.run"
     echo ""
@@ -57,46 +58,78 @@ usage () {
 getPerfData () {
     STREAM="$1"
     STATUS=$2
+    OUT=""
 
-    # Filter output to get values
+    ## Filter output to get values
 
-    # List tests status and ids + all errors from tempest's tests (see tempest.conf/[DEFAULT]/default_log_levels)
-    SUMMARY=$(echo "$STREAM" | awk '/^\{/ {print $5,$2,$3} /^2[0-9][0-9][0-9]-/ {$1=$2=$3=""; print $0}')
-    TIME=$(echo "$STREAM" | awk '/^Sum\ of/ {print $8}')
+    # XXX TO BE REMOVED
+    echo "$STREAM" > /tmp/stream
+
+    # Check if there was at least a test
+    NO_TEST="The test run didn't actually run any tests"
+    if [[ $STREAM =~ $NO_TEST ]]; then 
+        runExit $STATUS_UNKNOWN "$STREAM" "time=0, nb_tests=0, nb_tests_ok=0, nb_tests_ko=0, nb_skipped=0"        
+    fi
+
+    # Get test status
+    TIME=$(echo "$STREAM" | awk '/^Ran:.*tests\ in/ {printf "%d", $5}')
     PASSED=$(echo "$STREAM" | awk '/^\ -\ Passed:/ {print $3}')
     SKIPPED=$(echo "$STREAM" | awk '/^\ -\ Skipped:/ {print $3}')
     EXFAIL=$(echo "$STREAM" | awk '/^\ -\ Expected\ Fail:/ {print $4}')
     UNEXOK=$(echo "$STREAM" | awk '/^\ -\ Unexpected\ Success:/ {print $4}')
     FAILED=$(echo "$STREAM" | awk '/^\ -\ Failed:/ {print $3}')
 
-    # Construct PerfData
-
+    # Construct PerfData for Nagios
     let NBTESTS=SKIPPED+PASSED+EXFAIL+UNEXOK+FAILED
     let NB_OK=PASSED+EXFAIL
     let NB_KO=UNEXOK+FAILED
     PERFDATA="time=$TIME, nb_tests=$NBTESTS, nb_tests_ok=$NB_OK, nb_tests_ko=$NB_KO, nb_skipped=$SKIPPED"
 
-    # Compute output status
+    # Get LOG output from tests (see tempest.conf/[DEFAULT]/default_log_levels)
+    PATTERN="^2[0-9][0-9][0-9]-"
+    LOGOUTPUT=$(echo "$STREAM" | awk '/^2[0-9][0-9][0-9]-/ {print}')"\n"
+    if [[ $LOGOUTPUT =~ $PATTERN ]]; then
+        OUT+="-------------- Captured logging --------------\n"
+        OUT+=$LOGOUTPUT"\n"
+    fi
 
+    # Compute output status
     if [ $PASSED -gt 0 ] || [ $EXFAIL -gt 0 ]; then
         STATUS=$STATUS_OK
     fi
 
-    # Throw a Warning if execution time is over $MAXTIME
+    # Throw a Warning
     if [ $(bc <<< "($MAXTIME - $TIME) < 0") -eq 1 ] || [ $SKIPPED -gt 0 ] || [ $UNEXOK -gt 0 ]; then
         STATUS=$STATUS_WARNING
     fi
 
+    # Add list of skipped tests
+    if [ $SKIPPED -gt 0 ]; then
+        OUT+="-------------- Skipped Tests --------------\n"
+        OUT+=$(echo "$STREAM" | grep "SKIPPED")"\n\n"
+    fi
+
+    # Add details about the failed tests
     if [ $FAILED -gt 0 ]; then 
         STATUS=$STATUS_CRITICAL
 
-        # Add details about the failed tests, hidding empty lines and direct output of tests as they are already captured
-        TRACE=$(echo "$STREAM" | awk '/^\s*$/ {next} /^2[0-9][0-9][0-9]-/ {next} /^[\{|=]/ {flag=0;printf "\n"}flag; /\]\ ...\ FAILED/ {flag=1;print}')
-        SUMMARY=$(echo -e "$SUMMARY\n\n-------------- Details / Trace --------------\n$TRACE")
+        OUT+="-------------- Details / Trace --------------"
+        # exclude blank lines, OK and SKIPPED tests, LOGOUTPUT
+        OUT+=$(echo "$STREAM" | awk '/(^\s*$)|(.*\ ok$)|(.*\ SKIPPED)|(2[0-9][0-9][0-9]-)|(^~)|(^Sum\ of\ execute\ time)/ {next}; 
+              /^Captured\ pythonlogging/ {cap=1; next} /^Captured\ traceback/ {cap=0;next}; 
+              /^======$/ {skip=20;next} skip>0 {--skip;next};
+              /^.*FAILED$/ {print ""}1;')"\n\n"
     fi
 
+    # Add a summary
+    OUT+="-------------- Summary --------------\n"
+    OUT+=$(echo "$STREAM" | awk 'prt-->0; /^Ran:\ .\ tests\ in\ .*sec.$/ {prt=5;print}')"\n"
+
+    # Add a header
+    OUT="${STATUS_ALL[$STATUS]} : $PERFDATA\n\n"$OUT
+
     # Go to output/exit
-    runExit $STATUS "$SUMMARY" "$PERFDATA"
+    runExit $STATUS "$OUT" "$PERFDATA"
 }
 
 runExit () {
@@ -104,7 +137,7 @@ runExit () {
     OUTPUT="$2"
     PERFDATA="$3"
 
-    echo -e "$OUTPUT\nStatus : $STATUS (${STATUS_ALL:$STATUS:1})|$PERFDATA" 
+    echo -e "$OUTPUT\nStatus : $STATUS (${STATUS_ALL[$STATUS]})|$PERFDATA" 
     cd $OLDPWD
     exit $STATUS
 }
@@ -125,7 +158,7 @@ runRegexTests () {
 
     # Running many tests using ostestr with a regex
     # Redirecting output and error to subunit-trace then $STREAM
-    STREAM=`$RUN_CMD ostestr --serial --no-slowest --no-pretty --subunit --regex $REGEX 2>&1 | $SUBUNIT_TRACE`
+    STREAM=`$RUN_CMD ostestr --blacklist_file $BLFILE --serial --no-slowest --no-pretty --subunit --regex $REGEX 2>&1 | $SUBUNIT_TRACE`
     STATUS=$?
 
     # Have to filter the output because of ostestr auto discovery when using regex
@@ -159,7 +192,6 @@ initEnv () {
     fi
 
     ${RUN_CMD} find $TEMPEST -type f -name "*.pyc" -delete
-
 }
 
 runMain () {
