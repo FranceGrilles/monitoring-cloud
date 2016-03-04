@@ -20,8 +20,8 @@ import time
 from oslo_log import log as logging
 
 from tempest.api.compute import base
-from tempest.lib import exceptions as lib_exc
 from tempest import config
+from tempest.lib import exceptions as lib_exc
 from tempest import test
 
 CONF = config.CONF
@@ -122,7 +122,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     def test_create_server_with_unauthorized_image_fails(self):
         # Server creation with another user's image should fail
         self.assertRaises(lib_exc.BadRequest, self.client.create_server,
-                          name='test', imageRef=self.image['id'],
+                          name='tempest_unauth_image',
+                          imageRef=self.image['id'],
                           flavorRef=self.flavor_ref)
 
     @test.attr(type=['negative'])
