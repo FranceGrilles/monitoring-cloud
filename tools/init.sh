@@ -85,7 +85,7 @@ cd ..
 
 # Finally, copy the premade scripts to tempest working dir
 mkdir $TEMPEST/tempest/api/fgcloud/
-cp -al $RUNDIR/custom/test_user_isolation* $TEMPEST/tempest/api/fgcloud/
-cp -al $RUNDIR/custom/* $TEMPEST/tempest/scenario/
+cp -al $RUNDIR/custom/test_user_isolation_* $TEMPEST/tempest/api/fgcloud/
+cp -al $RUNDIR/custom/test_basic_* $TEMPEST/tempest/scenario/
 
 ## EOF
