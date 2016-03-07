@@ -33,23 +33,19 @@ usage () {
     echo "Exemple : $0 -a config/tempest-1.conf -b config/tempest-2.conf"
     echo ""
     echo "No test was run !|time=0, nb_test=0, nb_tests_ok=0, nb_tests_ko=0, nb_skipped=0"
-    echo "value : $1"
     exit 2
 }
 
 runMain () {
     {
-    echo "Lauching a VM with user A..."
-    ./check_openstack.sh -c $CONF_FILE_A -- tempest.fgcloud.test_user_isolation_setup 2>&1 > /dev/null
+    ./check_openstack.sh -c $CONF_FILE_A -- tempest.api.fgcloud.test_user_isolation_setup 2>&1 > /dev/null
     } &
 
-    sleep 5
-    echo "Waiting for VM to get ready..."
-    sleep 20
+    # Wait some time for the VM to get ready
+    sleep 15
 
     {
-    echo "Running isolation tests from user B..."
-    ./check_openstack.sh -c $CONF_FILE_B -- tempest.fgcloud.test_user_isolation_run
+    ./check_openstack.sh -c $CONF_FILE_B -- tempest.api.fgcloud.test_user_isolation_run
     } &
 
     wait

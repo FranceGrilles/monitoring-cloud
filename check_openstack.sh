@@ -24,8 +24,8 @@ MAXTIME=180
 CONF_FILE="config/tempest.conf"
 
 # Other variables
-BLFILE="config/tests_blacklist.txt"
 DIRNAME="$( cd "$(dirname "$0")" ; pwd -P )"
+BLFILE="$DIRNAME/config/tests_blacklist.txt"
 TEMPEST=$DIRNAME/tempest
 RUN_CMD="$TEMPEST/tools/with_venv.sh"
 STATUS_OK=0
@@ -63,7 +63,7 @@ getPerfData () {
     ## Filter output to get values
 
     # XXX TO BE REMOVED
-    echo "$STREAM" > /tmp/stream
+    echo "$STREAM" > /tmp/stream_$(date "+%m%d%H%M%S")
 
     # Check if there was at least a test
     NO_TEST="The test run didn't actually run any tests"
@@ -123,7 +123,7 @@ getPerfData () {
 
     # Add a summary
     OUT+="-------------- Summary --------------\n"
-    OUT+=$(echo "$STREAM" | awk 'prt-->0; /^Ran:\ .\ tests\ in\ .*sec.$/ {prt=5;print}')"\n"
+    OUT+=$(echo "$STREAM" | awk 'prt-->0; /^Ran:.*tests\ in/ {prt=5;print}')"\n"
 
     # Add a header
     OUT="${STATUS_ALL[$STATUS]} : $PERFDATA\n\n"$OUT
@@ -158,7 +158,14 @@ runRegexTests () {
 
     # Running many tests using ostestr with a regex
     # Redirecting output and error to subunit-trace then $STREAM
-    STREAM=`$RUN_CMD ostestr --blacklist_file $BLFILE --serial --no-slowest --no-pretty --subunit --regex $REGEX 2>&1 | $SUBUNIT_TRACE`
+
+    # As of https://bugs.launchpad.net/os-testr/+bug/1506215, we cannot use blacklist for now
+    # XXX Skipping tests manually :
+    # tempest.api.compute.test_authorization    # fail because of custom FGCloud policy
+    # tempest.api.fgcloud.test_user_isolation_* # use ./check_isolation.sh instead
+    REGFULL='((?!^tempest.api.compute.test_authorization)(?!^tempest.api.fgcloud.test_user_isolation_)('$REGEX'))'
+
+    STREAM=`$RUN_CMD ostestr --serial --no-slowest --no-pretty --subunit --regex $REGFULL 2>&1 | $SUBUNIT_TRACE`
     STATUS=$?
 
     # Have to filter the output because of ostestr auto discovery when using regex
