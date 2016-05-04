@@ -241,12 +241,12 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         self.assertRaises(lib_exc.Forbidden, self.client.resize_server,
                           self.server['id'], self.flavor_ref_alt)
 
-    @test.attr(type=['negative'])
-    @test.idempotent_id('24c79574-54cf-45f8-aec5-a5d26b2e1667')
-    def test_reboot_server_for_alt_account_fails(self):
-        # A reboot request for another user's server should fail
-        self.assertRaises(lib_exc.Forbidden, self.client.reboot_server,
-                          self.server['id'], type='HARD')
+#    @test.attr(type=['negative'])
+#    @test.idempotent_id('24c79574-54cf-45f8-aec5-a5d26b2e1667')
+#    def test_reboot_server_for_alt_account_fails(self):
+#        # A reboot request for another user's server should fail
+#        self.assertRaises(lib_exc.Forbidden, self.client.reboot_server,
+#                          self.server['id'], type='HARD')
 
     @test.attr(type=['negative'])
     @test.idempotent_id('e60e34c2-b05d-40f4-910b-85de186f9bbc')

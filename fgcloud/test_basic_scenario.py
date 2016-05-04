@@ -157,8 +157,9 @@ class TestBasicScenario(manager.ScenarioTest):
 
         # Create and associate a floating_ip to the server
         LOG.info('Creating Floating IP')
-        fip_net = CONF.network.floating_network_name
-        floating_ip = self.create_floating_ip(server, pool_name=fip_net)
+        #fip_net = CONF.network.floating_network_name
+        #floating_ip = self.create_floating_ip(server, pool_name=fip_net)
+        floating_ip = self.create_floating_ip(server)
         LOG.info('Floating IP created : %s (%s)', floating_ip['id'],
                  floating_ip['ip'])
 
