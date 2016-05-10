@@ -61,13 +61,14 @@ fi
 # Start the tempest install
 cd $TEMPEST
 
-# First upgrade pip binary
+# First upgrade pip and setuptools binaries
 if which sudo > /dev/null ; then
     sudo -H pip install --upgrade pip
     curl https://bootstrap.pypa.io/ez_setup.py -o - | sudo -H python 
 else
-    echo "Please run this command as root :"
+    echo "Please run these commands as root :"
     echo "pip install --upgrade pip"
+    echo "curl https://bootstrap.pypa.io/ez_setup.py -o - | python"
     echo "... and restart this script"
     exit 1
 fi

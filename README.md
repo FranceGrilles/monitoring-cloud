@@ -6,7 +6,7 @@ tempest is loaded as a git submodule from https://github.com/openstack/tempest/
 ## Goals
 Use tempest to monitor the stack and present the results to Nagios/Icinga
 
-With access to the API services will try to :
+With access to the API services fgcloud-scripts will try to :
 
 * add/upload custom image (small one like cirros or tinylinux)
 * create a tiny node with that image and a custom SSH-key
@@ -18,7 +18,7 @@ With access to the API services will try to :
   * unmount, reboot, recheck
 * cleanup
 
--> Done in the tempest.scenario.test_basic_scenario module
+-> Done in the tempest.api.fgcloud.test_basic_scenario module
 
 ## Usage
 ```
@@ -33,8 +33,8 @@ Output list of tests, failure traces, and performance data
   -u, --update                    Update the virtual environment (does not run any test)
   -- <single.test.to.run>         After any other options add a double dash following a test.name.to.run
 
-Exemple : ./check_openstack.sh -t 90 -- tempest.scenario.test_basic_scenario
-Exemple : ./check_openstack.sh -e '(^tempest\.scenario\.test_basic_(scenario|values))'
+Exemple : ./check_openstack.sh -t 90 -- tempest.api.fgcloud.test_basic_scenario
+Exemple : ./check_openstack.sh -e '(^tempest\.api\.fgcloud\.test_basic_(scenario|values))'
 ```
 ## Setup / Installation
 
@@ -42,13 +42,13 @@ First `git clone --recursive https://github.com/FranceGrilles/monitoring-cloud.g
 
 Check the content of the 'config' directory and edit/rename/copy any of these files to suits your environment :
 * `admin-creds` : store the admin user information (only used by the tools/scripts to create/list/delete users)
-* `accounts.yaml` : used to store the credentials of the testing_user(s).
+* `accounts.yaml` : used to store the credentials of the static testing_user(s).
 * `tempest.conf` : main config file that store all the specs of your stack. Pay attention to :
-  * `default_log_levels` : If the output is to verbose, you may need to adapt these values
+  * `default_log_levels` : If the output is too verbose, you may need to adapt these values
   * `build_interval / build_timeout / ready_wait` : these high values where ok for a dev_stack, but may not for a production site
   * `[scenario]` : if you wish to create then upload a custom image (like cirros), you may need to download the files (img,ami,ari,aki) to your computer first...
   * `[service_available]` : activate or desactivate the services according to your site
-  * `[auth]:test_accounts_file` : the path to the file has to be like "../config/account.yaml"
+  * `[auth]:test_accounts_file` : the path to the file has to be like "../config/account.yaml" (relative to the tempest dir)
 
 Once the config is done, simply run the init script :
 ```
@@ -64,4 +64,6 @@ If not, you'll have to install the packages manually.
 
 This has been successfully tested on Centos7, Ubuntu14 and Debian8.
 
-Once the script has run, you can launch `./check_openstack.sh -- tempest.scenario.test_basic_values` or any other tempest test :)
+Once the script has run, you can launch `./check_openstack.sh -- tempest.api.fgcloud.test_basic_scenario` or any other tempest test :)
+
+Feel free to report any problem you may encounter on github !
