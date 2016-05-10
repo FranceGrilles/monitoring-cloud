@@ -31,7 +31,7 @@ git submodule update
 if $(grep 'centos\|rhel' /etc/os-release -i -q) ; then
     if which sudo > /dev/null ; then
         sudo yum install -y epel-release
-        sudo yum update
+        sudo yum update -y
         sudo yum install -y bc libffi-devel openssl-devel python-pip python-virtualenv gcc
     else
         echo "You need to manually install these packages as root :"
@@ -64,6 +64,7 @@ cd $TEMPEST
 # First upgrade pip binary
 if which sudo > /dev/null ; then
     sudo -H pip install --upgrade pip
+    curl https://bootstrap.pypa.io/ez_setup.py -o - | sudo -H python 
 else
     echo "Please run this command as root :"
     echo "pip install --upgrade pip"
