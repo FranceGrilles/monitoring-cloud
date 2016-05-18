@@ -14,10 +14,7 @@
 #    under the License.
 
 from oslo_log import log as logging
-# from tempest.common import custom_matchers
-# from tempest.common import waiters
 from tempest import config
-# from tempest import exceptions
 from tempest.scenario import manager
 from tempest import test
 import testtools
@@ -31,16 +28,14 @@ class TestBasicValues(manager.ScenarioTest):
     """This is a basic values test.
 
     This test works:
-    * across multiple components
     * as a regular user
-    * check command outputs
 
     Steps:
-    1. Check running services activated in the configuration file
+    1. Checks if the result/errors are displayed
 
     """
 
-    @test.idempotent_id('6e11ab77-7b15-4871-8497-5b17c8775654')
+    @test.idempotent_id('8260e8f5-0f3d-4c72-80b8-14442b43de50')
     def test_basic_values_true(self):
         time.sleep(2)
         LOG.info("info message in OK")
@@ -48,19 +43,17 @@ class TestBasicValues(manager.ScenarioTest):
         LOG.critical("crit message in OK")
         self.assertEqual(4, 2 * 2)
 
-    @test.idempotent_id('44c2b63d-b062-4082-8dbb-4c6bbd9ca68f')
-    def test_basic_values_false(self):
-
+    @test.idempotent_id('a5421964-eedc-4304-9fd0-f25c8f0ec667')
+    def test_basic_values_false_warn(self):
         LOG.warn("warn message in FAILED 1")
         self.assertEqual(5, 2 * 2)
 
-    @test.idempotent_id('7c89fbfd-cd86-487b-a241-54ec732e5569')
-    def test_basic_values_false2(self):
-
+    @test.idempotent_id('2a50691f-91cd-45d2-bbef-4c2ab8b8536f')
+    def test_basic_values_false_crit(self):
         LOG.critical("crit message in FAILED 2")
         self.assertEqual(6, 2 * 2)
 
-    @test.idempotent_id('c45e06e2-e508-4ca3-8cce-9c56c42c1752')
-    @testtools.skipIf(1,'Skipped Test')
+    @test.idempotent_id('3f303565-8f22-404e-ade9-6661529440b2')
+    @testtools.skipIf(1, 'Skipped Test')
     def test_basic_values_skipped(self):
         LOG.info("skipped test")

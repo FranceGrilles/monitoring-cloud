@@ -12,7 +12,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
+import time
 from oslo_log import log as logging
 from tempest.common import custom_matchers
 from tempest.common import waiters
@@ -110,17 +110,13 @@ class TestBasicScenario(manager.ScenarioTest):
                    '%s' % (secgroup['id'], server['id']))
             raise exceptions.TimeoutException(msg)
 
-    @test.idempotent_id('73f55e7b-a40e-4cd3-9b2d-0718b20aac6c')
+    @test.idempotent_id('53f75314-eed0-4db6-8f43-b21883d3941f')
     @test.services('compute', 'volume', 'image', 'network')
     def test_basic_scenario(self):
 
-        LOG.info("info message")
-#        LOG.warn("warn message")
-#        LOG.critical("crit message")
-
         # Create an image from local files (see conf.scenario.*_img_file)
         # image = self.glance_image_create()
-
+        # -or-
         # Use existing image (faster)
         image = CONF.compute.image_ref
 
@@ -157,9 +153,9 @@ class TestBasicScenario(manager.ScenarioTest):
 
         # Create and associate a floating_ip to the server
         LOG.info('Creating Floating IP')
-        #fip_net = CONF.network.floating_network_name
-        #floating_ip = self.create_floating_ip(server, pool_name=fip_net)
-        floating_ip = self.create_floating_ip(server)
+        fip_net = CONF.network.floating_network_name
+        floating_ip = self.create_floating_ip(server, pool_name=fip_net)
+        # floating_ip = self.create_floating_ip(server)
         LOG.info('Floating IP created : %s (%s)', floating_ip['id'],
                  floating_ip['ip'])
 

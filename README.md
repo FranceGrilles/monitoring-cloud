@@ -44,6 +44,7 @@ Check the content of the 'config' directory and edit/rename/copy any of these fi
 * `admin-creds` : store the admin user information (only used by the tools/scripts to create/list/delete users)
 * `accounts.yaml` : used to store the credentials of the static testing_user(s).
 * `tempest.conf` : main config file that store all the specs of your stack. Pay attention to :
+  * `site_id` : Add here a custom identifier for the site (must be unique and the copied in the second config file for isolation tests[1])
   * `default_log_levels` : If the output is too verbose, you may need to adapt these values
   * `build_interval / build_timeout / ready_wait` : these high values where ok for a dev_stack, but may not for a production site
   * `[scenario]` : if you wish to create then upload a custom image (like cirros), you may need to download the files (img,ami,ari,aki) to your computer first...
@@ -67,3 +68,5 @@ This has been successfully tested on Centos7, Ubuntu14 and Debian8.
 Once the script has run, you can launch `./check_openstack.sh -- tempest.api.fgcloud.test_basic_scenario` or any other tempest test :)
 
 Feel free to report any problem you may encounter on github !
+
+[1] See https://github.com/FranceGrilles/cloud-security.git

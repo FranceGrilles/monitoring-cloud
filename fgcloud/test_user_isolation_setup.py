@@ -17,9 +17,7 @@ import json
 import os.path
 import six
 import time
-
 from oslo_log import log as logging
-
 from tempest.api.compute import base
 from tempest.common.utils import data_utils
 from tempest import config
@@ -29,7 +27,6 @@ CONF = config.CONF
 file_path = '/tmp/ztempest_temp_info_wXBQq8Vn'
 LOG = logging.getLogger(__name__)
 fileinfo = {}
-
 
 class UserIsolationSetup(base.BaseV2ComputeTest):
 
@@ -127,7 +124,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             cls.client.delete_server(cls.server['id'])
         super(UserIsolationSetup, cls).resource_cleanup()
 
-    @test.idempotent_id('90294316-dfd1-405c-88d3-227bdb52f0d4')
+    @test.idempotent_id('30d8f7d5-84cc-47e1-9ccd-e694ab86b685')
     def test_wait_for_test_to_terminate(self):
         while os.path.exists(file_path):
             time.sleep(3)

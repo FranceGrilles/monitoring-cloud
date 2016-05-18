@@ -62,9 +62,6 @@ getPerfData () {
 
     ## Filter output to get values
 
-    # XXX TO BE REMOVED
-    echo "$STREAM" > /tmp/stream_$(date "+%m%d%H%M%S")
-
     # Check if there was at least a test
     NO_TEST="The test run didn't actually run any tests"
     if [[ $STREAM =~ $NO_TEST ]]; then 
