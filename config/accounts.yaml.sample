@@ -1,0 +1,46 @@
+# Generated users for use with tempest API
+
+# See officiel tempest documentation regarding parallel tests
+# You may need to create 2 times the number of concurrent test
+
+# Test user 1
+- username: 'tempest_user_1'
+  tenant_name: 'tempest_tenant_1'
+  password: ''
+  resources:
+    network: 'tempest_net_1'
+
+# Test user 2
+- username: 'tempest_user_2'
+  tenant_name: 'tempest_tenant_2'
+  password: ''
+  resources:
+    network: 'tempest_net_2'
+
+# Test user 3
+- username: 'tempest_user_3'
+  tenant_name: 'tempest_tenant_3'
+  password: ''
+  resources:
+    network: 'tempest_net_3'
+
+# Test user 4
+- username: 'tempest_user_4'
+  tenant_name: 'tempest_tenant_4'
+  password: ''
+  resources:
+    network: 'tempest_net_4'
+
+# Test user 5
+- username: 'tempest_user_5'
+  tenant_name: 'tempest_tenant_5'
+  password: ''
+  resources:
+    network: 'tempest_net_5'
+
+# Test user 6
+- username: 'tempest_user_6'
+  tenant_name: 'tempest_tenant_6'
+  password: ''
+  resources:
+    network: 'tempest_net_6'
