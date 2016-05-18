@@ -44,7 +44,6 @@ Check the content of the 'config' directory and edit/rename/copy any of these fi
 * `admin-creds` : store the admin user information (only used by the tools/scripts to create/list/delete users)
 * `accounts.yaml` : used to store the credentials of the static testing_user(s).
 * `tempest.conf` : main config file that store all the specs of your stack. Pay attention to :
-  * `site_id` : Add here a custom identifier for the site (must be unique and the copied in the second config file for isolation tests[1])
   * `default_log_levels` : If the output is too verbose, you may need to adapt these values
   * `build_interval / build_timeout / ready_wait` : these high values where ok for a dev_stack, but may not for a production site
   * `[scenario]` : if you wish to create then upload a custom image (like cirros), you may need to download the files (img,ami,ari,aki) to your computer first...
@@ -69,4 +68,33 @@ Once the script has run, you can launch `./check_openstack.sh -- tempest.api.fgc
 
 Feel free to report any problem you may encounter on github !
 
-[1] See https://github.com/FranceGrilles/cloud-security.git
+# Isolation Tests
+
+In addition to the previous wrapper, we provide another one to ensure that some actions cannot be made intra-tenant.
+For exemple : User_A create/launch a VM. User_B must not be allowed to destroy it or change anything related to it.
+
+This is a security feature that is deprecated (by now) but some tweaks can make it work :)
+See the bug report : https://bugs.launchpad.net/nova/+bug/1539351
+
+For this to work you have to patch some of the core files of your OpenStack installation and adapt some of the policies
+Refer to https://github.com/FranceGrilles/cloud-security.git for the patch files and policies exemples.
+
+## Setup
+
+ * create two tempest.conf files (with your stack details) that points each to two separate accounts.yaml files ([auth]:test_accounts_file)
+ * set the same `[default]:site_id` to those tempest.conf files (must be unique for your site)
+ * each accounts.yaml must provide a unique/different non-admin user credential but the two must be on the same project/tenant.
+
+## Usage
+
+```
+Usage: ./check_isolation.sh [OPTION] ...
+Run an isolation test between 2 users in the same tenant
+Use check_openstack.sh to filter output
+
+  -a <path_to_file>   Use a custom tempest.conf file location for user_1
+  -b <path_to_file>   Use a custom tempest.conf file location for user_2
+  -h                  Print this help message
+
+Exemple : ./check_isolation.sh -a config/tempest-1.conf -b config/tempest-2.conf
+```
