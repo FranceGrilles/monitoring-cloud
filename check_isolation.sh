@@ -37,6 +37,7 @@ usage () {
 }
 
 runMain () {
+    cd "$(dirname "$0")"
     {
     ./check_openstack.sh -c $CONF_FILE_A -- tempest.api.fgcloud.test_user_isolation_setup 2>&1 > /dev/null
     } &

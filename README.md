@@ -26,7 +26,7 @@ Usage: ./check_openstack.sh [OPTION] ...
 Run Tempest test suite and filter output for monitoring by Nagios/Icinga
 Output list of tests, failure traces, and performance data
 
-  -c, --config <path_to_file>     Use a custom tempest.conf file location (default : config/tempest.conf)
+  -c, --config <path_to_file>     Use a custom tempest.conf file location (default : tempest.conf)
   -e, --regex '^tempest\.regex'   Launch tests according to the regex (better in quotes)
   -h, --help                      Print this usage message
   -t, --timeout <time_in_sec>     Raise a WARNING if the test(s) run longer (default : 120)

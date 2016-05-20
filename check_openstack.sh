@@ -21,7 +21,7 @@
 
 # Default values
 MAXTIME=180
-CONF_FILE="config/tempest.conf"
+CONF_FILE="tempest.conf"
 
 # Other variables
 DIRNAME="$( cd "$(dirname "$0")" ; pwd -P )"
@@ -43,7 +43,7 @@ usage () {
     echo "Run Tempest test suite and filter output for monitoring by Nagios/Icinga"
     echo "Output list of tests, failure traces, and performance data"
     echo ""
-    echo "  -c, --config <path_to_file>     Use a custom tempest.conf file location (default : config/tempest.conf)"
+    echo "  -c, --config <path_to_file>     Use a custom tempest.conf file location (default : tempest.conf)"
     echo "  -e, --regex '^tempest\.regex'   Launch tests according to the regex (better in quotes)"
     echo "  -h, --help                      Print this usage message"
     echo "  -t, --timeout <time_in_sec>     Raise a WARNING if the test(s) run longer (default : 180s)"
@@ -173,8 +173,8 @@ runRegexTests () {
 
 initEnv () {
     # Load custom tempest.conf file
-    if [ -f `readlink -f "$CONF_FILE"` ]; then
-        CONF_FILE=`readlink -f "$CONF_FILE"`
+    if [ -f `readlink -f "$DIRNAME/config/$CONF_FILE"` ]; then
+        CONF_FILE=`readlink -f "$DIRNAME/config/$CONF_FILE"`
         export TEMPEST_CONFIG_DIR=`dirname "$CONF_FILE"`
         export TEMPEST_CONFIG=`basename "$CONF_FILE"`
     fi
