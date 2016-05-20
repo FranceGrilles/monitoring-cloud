@@ -84,7 +84,7 @@ getPerfData () {
 
     # Get LOG output from tests (see tempest.conf/[DEFAULT]/default_log_levels)
     PATTERN="^2[0-9][0-9][0-9]-"
-    LOGOUTPUT=$(echo "$STREAM" | awk '/^2[0-9][0-9][0-9]-/ {print}')"\n"
+    LOGOUTPUT=$(echo "$STREAM" | awk '/^2[0-9][0-9][0-9]-/ {print}')
     if [[ $LOGOUTPUT =~ $PATTERN ]]; then
         OUT+="-------------- Captured logging --------------\n"
         OUT+=$LOGOUTPUT"\n"
@@ -120,7 +120,7 @@ getPerfData () {
 
     # Add a summary
     OUT+="-------------- Summary --------------\n"
-    OUT+=$(echo "$STREAM" | awk 'prt-->0; /^Ran:.*tests\ in/ {prt=5;print}')"\n"
+    OUT+=$(echo "$STREAM" | awk 'prt-->0; /^Ran:.*tests\ in/ {prt=5;print}')
 
     # Add a header
     OUT="${STATUS_ALL[$STATUS]} : $PERFDATA\n\n"$OUT
