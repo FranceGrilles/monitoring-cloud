@@ -19,7 +19,7 @@ import time
 from oslo_log import log as logging
 from tempest.api.compute import base
 from tempest import config
-from tempest_lib import exceptions as lib_exc
+from tempest.lib import exceptions as lib_exc
 from tempest import test
 
 CONF = config.CONF

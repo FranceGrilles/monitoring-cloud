@@ -87,7 +87,7 @@ getPerfData () {
     LOGOUTPUT=$(echo "$STREAM" | awk '/^2[0-9][0-9][0-9]-/ {print}')
     if [[ $LOGOUTPUT =~ $PATTERN ]]; then
         OUT+="-------------- Captured logging --------------\n"
-        OUT+=$LOGOUTPUT"\n"
+        OUT+=$LOGOUTPUT
     fi
 
     # Compute output status
@@ -102,15 +102,15 @@ getPerfData () {
 
     # Add list of skipped tests
     if [ $SKIPPED -gt 0 ]; then
-        OUT+="-------------- Skipped Tests --------------\n"
-        OUT+=$(echo "$STREAM" | grep "SKIPPED")"\n\n"
+        OUT+="\n-------------- Skipped Tests --------------\n"
+        OUT+=$(echo "$STREAM" | grep "SKIPPED")
     fi
 
     # Add details about the failed tests
     if [ $FAILED -gt 0 ]; then 
         STATUS=$STATUS_CRITICAL
 
-        OUT+="-------------- Details / Trace --------------"
+        OUT+="\n-------------- Details / Trace --------------\n"
         # exclude blank lines, OK and SKIPPED tests, LOGOUTPUT
         OUT+=$(echo "$STREAM" | awk '/(^\s*$)|(.*\ ok$)|(.*\ SKIPPED)|(2[0-9][0-9][0-9]-)|(^~)|(^Sum\ of\ execute\ time)/ {next}; 
               /^Captured\ pythonlogging/ {cap=1; next} /^Captured\ traceback/ {cap=0;next}; 
@@ -119,11 +119,11 @@ getPerfData () {
     fi
 
     # Add a summary
-    OUT+="-------------- Summary --------------\n"
+    OUT+="\n-------------- Summary --------------\n"
     OUT+=$(echo "$STREAM" | awk 'prt-->0; /^Ran:.*tests\ in/ {prt=5;print}')
 
     # Add a header
-    OUT="${STATUS_ALL[$STATUS]} : $PERFDATA\n\n"$OUT
+    OUT="${STATUS_ALL[$STATUS]} : $PERFDATA\n"$OUT
 
     # Go to output/exit
     runExit $STATUS "$OUT" "$PERFDATA"
@@ -134,7 +134,7 @@ runExit () {
     OUTPUT="$2"
     PERFDATA="$3"
 
-    echo -e "$OUTPUT\nStatus : $STATUS (${STATUS_ALL[$STATUS]})|$PERFDATA" 
+    echo -e "$OUTPUT\nStatus : exit $STATUS (${STATUS_ALL[$STATUS]})|$PERFDATA" 
     cd $OLDPWD
     exit $STATUS
 }
