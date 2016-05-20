@@ -159,6 +159,7 @@ class TestBasicScenario(manager.ScenarioTest):
         LOG.info('Floating IP created : %s (%s)', floating_ip['id'],
                  floating_ip['ip'])
 
+        LOG.info('Creating Security Group')
         self.create_and_add_security_group_to_server(server)
 
         # check that we can SSH to the server
@@ -183,6 +184,7 @@ class TestBasicScenario(manager.ScenarioTest):
         self.check_partitions()
 
         # Check timestamp on volume after reboot
+        LOG.info('Checking timestamp')
         timestamp2 = self.get_timestamp(floating_ip['ip'],
                                         dev_name=vdev_name,
                                         private_key=keypair['private_key'])
