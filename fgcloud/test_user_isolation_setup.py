@@ -24,9 +24,8 @@ from tempest import config
 from tempest import test
 
 CONF = config.CONF
-file_path = '/tmp/ztempest_temp_info_wXBQq8Vn'
 LOG = logging.getLogger(__name__)
-fileinfo = {}
+file_path = "/tmp/tempest_" + CONF.compute.image_ref
 
 class UserIsolationSetup(base.BaseV2ComputeTest):
 
@@ -58,6 +57,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
     def resource_setup(cls):
         super(UserIsolationSetup, cls).resource_setup()
 
+        fileinfo = {}
         if os.path.exists(file_path):
             LOG.info("/!\\ deleting previous file /!\\")
             os.remove(file_path)

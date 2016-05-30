@@ -19,12 +19,12 @@ import time
 from oslo_log import log as logging
 from tempest.api.compute import base
 from tempest import config
-from tempest_lib import exceptions as lib_exc
+from tempest.lib import exceptions as lib_exc
 from tempest import test
 
 CONF = config.CONF
-file_path = '/tmp/ztempest_temp_info_wXBQq8Vn'
 LOG = logging.getLogger(__name__)
+file_path = "/tmp/tempest_" + CONF.compute.image_ref
 
 
 class UserIsolationRun(base.BaseV2ComputeTest):
@@ -154,9 +154,19 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     @test.idempotent_id('36c0b45f-cac3-4aa3-95aa-6722d697de9b')
     def test_get_metadata_of_alt_account_server_fails(self):
         # A get metadata for another user's server should fail
-        self.assertRaises(lib_exc.Forbidden,
-                          self.client.show_server_metadata_item,
-                          self.server['id'], 'meta1')
+        try:
+            self.client.show_server_metadata_item
+        except lib_exc.Forbidden:
+            self.fail('Forbidden')
+        except lib_exc.NotFound:
+            self.fail('NotFound')
+
+#        self.assertRaises(lib_exc.Forbidden,
+#                          self.client.show_server_metadata_item,
+#                          self.server['id'], 'meta1')
+#        self.assertRaises(lib_exc.NotFound,
+#                          self.client.show_server_metadata_item,
+#                          self.server['id'], 'meta1')
 
     @test.attr(type=['negative'])
     @test.idempotent_id('197f8b8e-d41d-4060-9266-f60b2e179a26')

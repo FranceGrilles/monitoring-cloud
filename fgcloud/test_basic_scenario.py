@@ -141,7 +141,7 @@ class TestBasicScenario(manager.ScenarioTest):
         volume = self.cinder_create()
         volumes = self.cinder_list()
         self.assertIn(volume['id'], [x['id'] for x in volumes])
-        LOG.info('Volume created : %s', volume['display_name'])
+        #LOG.info('Volume created : %s', volume['display_name'])
 
         self.cinder_show(volume)
 
