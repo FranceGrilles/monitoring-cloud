@@ -30,7 +30,7 @@ usage () {
     echo "  -b <path_to_file>   Use a custom tempest.conf file location for user_2"
     echo "  -h                  Print this help message"
     echo ""
-    echo "Exemple : $0 -a config/tempest-1.conf -b config/tempest-2.conf"
+    echo "Exemple : $0 -a tempest-1.conf -b tempest-2.conf"
     echo ""
     echo "No test was run !|time=0, nb_test=0, nb_tests_ok=0, nb_tests_ko=0, nb_skipped=0"
     exit 2
@@ -47,9 +47,11 @@ runMain () {
 
     {
     ./check_openstack.sh -c $CONF_FILE_B -- tempest.api.fgcloud.test_user_isolation_run
+    STATUS=$?
     } &
 
     wait
+    exit $STATUS
 }
 
 # No argument given
