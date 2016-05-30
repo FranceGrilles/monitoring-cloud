@@ -1,0 +1,5 @@
+# List of pattern excluding tests
+
+^tempest\.api\.compute\.test_authorization.*  # Skipped as we have users in the same tenant, theses tests will fail
+
+^tempest\.fgcloud\.test_user_isolation.*      # Skipped as FGCloud Isolation has to be ran separately
