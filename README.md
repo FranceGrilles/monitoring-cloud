@@ -26,7 +26,8 @@ Usage: ./check_openstack.sh [OPTION] ...
 Run Tempest test suite and filter output for monitoring by Nagios/Icinga
 Output list of tests, failure traces, and performance data
 
-  -c, --config <path_to_file>     Use a custom tempest.conf file location (default : tempest.conf)
+  -c, --config <file>             Use a custom tempest.conf file location (default : tempest.conf)
+                                  Must be in ./config/
   -e, --regex '^tempest\.regex'   Launch tests according to the regex (better in quotes)
   -h, --help                      Print this usage message
   -t, --timeout <time_in_sec>     Raise a WARNING if the test(s) run longer (default : 120)
@@ -92,9 +93,10 @@ Usage: ./check_isolation.sh [OPTION] ...
 Run an isolation test between 2 users in the same tenant
 Use check_openstack.sh to filter output
 
-  -a <path_to_file>   Use a custom tempest.conf file location for user_1
-  -b <path_to_file>   Use a custom tempest.conf file location for user_2
-  -h                  Print this help message
+  -a <file>   Use a custom tempest.conf file location for user_1
+  -b <file>   Use a custom tempest.conf file location for user_2
+              Must be in ./config/
+  -h          Print this help message
 
-Exemple : ./check_isolation.sh -a config/tempest-1.conf -b config/tempest-2.conf
+Exemple : ./check_isolation.sh -a tempest-1.conf -b tempest-2.conf
 ```
