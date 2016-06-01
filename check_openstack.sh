@@ -53,7 +53,7 @@ usage () {
     echo ""
     echo "Exemple : $0 -t 90 -- tempest.scenario.test_basic_scenario"
     echo "Exemple : $0 -e '(^tempest\.scenario\.test_basic_(scenario|values))'"
-    runExit $STATUS_CRITICAL "No test was run !" "time=0, nb_test=0, nb_tests_ok=0, nb_tests_ko=0, nb_skipped=0"
+    runExit $STATUS_CRITICAL "No test was run !" "exec_time=0s;;;; nb_test=0;;;; nb_tests_ok=0;;;; nb_tests_ko=0;;;; nb_skipped=0;;;;"
 }
 
 getPerfData () {
@@ -66,7 +66,7 @@ getPerfData () {
     # Check if there was at least a test
     NO_TEST="The test run didn't actually run any tests"
     if [[ $STREAM =~ $NO_TEST ]]; then 
-        runExit $STATUS_UNKNOWN "$STREAM" "time=0, nb_tests=0, nb_tests_ok=0, nb_tests_ko=0, nb_skipped=0"        
+        runExit $STATUS_UNKNOWN "$STREAM" "exec_time=0s;;;; nb_tests=0;;;; nb_tests_ok=0;;;; nb_tests_ko=0;;;; nb_skipped=0;;;;"        
     fi
 
     # Get test status
@@ -81,7 +81,8 @@ getPerfData () {
     let NBTESTS=SKIPPED+PASSED+EXFAIL+UNEXOK+FAILED
     let NB_OK=PASSED+EXFAIL
     let NB_KO=UNEXOK+FAILED
-    PERFDATA="time=$TIME, nb_tests=$NBTESTS, nb_tests_ok=$NB_OK, nb_tests_ko=$NB_KO, nb_skipped=$SKIPPED"
+    PERFDATA="exec_time="$TIME"s;;;; nb_tests=$NBTESTS;;;; nb_tests_ok=$NB_OK;;;; nb_tests_ko=$NB_KO;;;; nb_skipped=$SKIPPED;;;;"
+    INFODATA="exec_time="$TIME"s nb_tests=$NBTESTS nb_tests_ok=$NB_OK nb_tests_ko=$NB_KO nb_skipped=$SKIPPED"
 
     # Get LOG output from tests (see tempest.conf/[DEFAULT]/default_log_levels)
     PATTERN="^2[0-9][0-9][0-9]-"
@@ -124,7 +125,7 @@ getPerfData () {
     OUT+=$(echo "$STREAM" | awk 'prt-->0; /^Ran:.*tests\ in/ {prt=5;print}')
 
     # Add a header
-    OUT="${STATUS_ALL[$STATUS]} : $PERFDATA\n"$OUT
+    OUT="${STATUS_ALL[$STATUS]} : $INFODATA\n"$OUT
 
     # Go to output/exit
     runExit $STATUS "$OUT" "$PERFDATA"
@@ -135,7 +136,7 @@ runExit () {
     OUTPUT="$2"
     PERFDATA="$3"
 
-    echo -e "$OUTPUT\nStatus : exit $STATUS (${STATUS_ALL[$STATUS]})|$PERFDATA" 
+    echo -e "$OUTPUT\nStatus : exit $STATUS (${STATUS_ALL[$STATUS]}) | $PERFDATA" 
     cd $OLDPWD
     exit $STATUS
 }
