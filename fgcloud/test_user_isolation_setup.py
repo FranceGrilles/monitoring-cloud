@@ -78,7 +78,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         image_file = six.StringIO(('*' * 1024))
         body = cls.glance_client.update_image(image_id,
                                               data=image_file)['image']
-        cls.glance_client.wait_for_image_status(image_id, 'active')
+        #cls.glance_client.wait_for_image_status(image_id, 'active')
         cls.image = cls.compute_images_client.show_image(image_id)['image']
         fileinfo['image'] = cls.image
         LOG.info("glance image created and active")
