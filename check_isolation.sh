@@ -38,7 +38,7 @@ usage () {
 }
 
 runMain () {
-    STATUS=2
+    STATUS=3
     cd "$(dirname "$0")"
     {
     ./check_openstack.sh -c $CONF_FILE_A -- tempest.api.fgcloud.test_user_isolation_setup 2>&1 > /dev/null
@@ -49,10 +49,10 @@ runMain () {
 
     {
     ./check_openstack.sh -c $CONF_FILE_B -- tempest.api.fgcloud.test_user_isolation_run
-    STATUS=$?
     } &
-
-    wait
+    my_pid=$!
+    wait $my_pid
+    STATUS=$?
     exit $STATUS
 }
 
