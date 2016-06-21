@@ -45,7 +45,7 @@ runMain () {
     } &
 
     # Wait some time for the VM to get ready
-    sleep 15
+    sleep 1
 
     {
     ./check_openstack.sh -c $CONF_FILE_B -- tempest.api.fgcloud.test_user_isolation_run
