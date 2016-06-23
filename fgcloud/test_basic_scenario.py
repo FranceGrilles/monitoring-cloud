@@ -137,8 +137,6 @@ class TestBasicScenario(manager.ScenarioTest):
         self.assertIn(server['id'], [x['id'] for x in servers])
         LOG.info('Server created : %s', server['name'])
 
-        #LOG.info(self.nova_show(server))
-
         # Create a new volume
         LOG.info('Creating volume...')
         volume = self.cinder_create()
@@ -150,14 +148,10 @@ class TestBasicScenario(manager.ScenarioTest):
             volume_name = volume['name']
         LOG.info('Volume created : %s', volume_name)
 
-        #LOG.info(self.cinder_show(volume))
-
         # Attach volume to server
         LOG.info('Attaching volume to instance...')
         volume = self.nova_volume_attach(server, volume)
         self.addCleanup(self.nova_volume_detach, server, volume)
-
-        #LOG.info(self.cinder_show(volume))
 
         # Create and associate a floating_ip to the server
         # We need to specify the pool_name as we may have multiple networks
@@ -192,8 +186,6 @@ class TestBasicScenario(manager.ScenarioTest):
         # check that we can SSH to the server after reboot
         self.linux_client = self.get_remote_client(
             floating_ip['ip'], private_key=keypair['private_key'])
-
-        #self.check_partitions()
 
         # Check timestamp on volume after reboot
         LOG.info('Checking timestamp...')
