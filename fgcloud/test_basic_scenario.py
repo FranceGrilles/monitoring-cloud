@@ -35,7 +35,7 @@ class TestBasicScenario(manager.ScenarioTest):
     * check command outputs
 
     Steps:
-    1. Create image
+    1. Use existing image ref
     2. Create keypair
     3. Boot instance with keypair and get list of instances
     4. Create volume and show list of volumes
@@ -109,6 +109,7 @@ class TestBasicScenario(manager.ScenarioTest):
             msg = ('Timed out waiting for adding security group %s to server '
                    '%s' % (secgroup['id'], server['id']))
             raise exceptions.TimeoutException(msg)
+        return secgroup['name']
 
     @test.idempotent_id('53f75314-eed0-4db6-8f43-b21883d3941f')
     @test.services('compute', 'volume', 'image', 'network')
@@ -119,14 +120,16 @@ class TestBasicScenario(manager.ScenarioTest):
         # -or-
         # Use existing image (faster)
         image = CONF.compute.image_ref
+        LOG.info('Use existing image ref : %s' % image)
 
         # Create keypair for auth
+        LOG.info('Creating keypair...')
         keypair = self.create_keypair()
-        LOG.info('Keypair %s created (%s)', keypair['name'],
+        LOG.info('Keypair created : %s (%s)', keypair['name'],
                  keypair['fingerprint'])
 
         # Create and boot server
-        LOG.info('Creating server')
+        LOG.info('Creating server...')
         server = self.create_server(image_id=image,
                                     key_name=keypair['name'],
                                     wait_until='ACTIVE')
@@ -134,37 +137,40 @@ class TestBasicScenario(manager.ScenarioTest):
         self.assertIn(server['id'], [x['id'] for x in servers])
         LOG.info('Server created : %s', server['name'])
 
-        self.nova_show(server)
-
         # Create a new volume
-        LOG.info('Creating volume')
+        LOG.info('Creating volume...')
         volume = self.cinder_create()
         volumes = self.cinder_list()
         self.assertIn(volume['id'], [x['id'] for x in volumes])
-        #LOG.info('Volume created : %s', volume['display_name'])
-
-        self.cinder_show(volume)
+        if 'display_name' in volume:
+            volume_name = volume['display_name']
+        else:
+            volume_name = volume['name']
+        LOG.info('Volume created : %s', volume_name)
 
         # Attach volume to server
+        LOG.info('Attaching volume to instance...')
         volume = self.nova_volume_attach(server, volume)
         self.addCleanup(self.nova_volume_detach, server, volume)
 
-        self.cinder_show(volume)
-
         # Create and associate a floating_ip to the server
-        LOG.info('Creating Floating IP')
+        # We need to specify the pool_name as we may have multiple networks
+        LOG.info('Creating Floating IP...')
         fip_net = CONF.network.floating_network_name
         floating_ip = self.create_floating_ip(server, pool_name=fip_net)
-        # floating_ip = self.create_floating_ip(server)
         LOG.info('Floating IP created : %s (%s)', floating_ip['id'],
                  floating_ip['ip'])
 
-        LOG.info('Creating Security Group')
-        self.create_and_add_security_group_to_server(server)
+        LOG.info('Creating Security Group...')
+        sec_grp_name = self.create_and_add_security_group_to_server(server)
+        LOG.info('Security Group created : %s' % sec_grp_name)
 
-        # check that we can SSH to the server
+        # check that we can PING and SSH to the server
+        LOG.info('Checking connectivity...')
+        ping_result = self.ping_ip_address(ip_address=floating_ip['ip'])
         self.linux_client = self.get_remote_client(
             floating_ip['ip'], private_key=keypair['private_key'])
+        LOG.info('Ping to Floating IP : %s' % ping_result)
 
         # Create a timestamp on the volume
         vdev_name = CONF.compute.volume_device_name
@@ -181,11 +187,10 @@ class TestBasicScenario(manager.ScenarioTest):
         self.linux_client = self.get_remote_client(
             floating_ip['ip'], private_key=keypair['private_key'])
 
-        self.check_partitions()
-
         # Check timestamp on volume after reboot
-        LOG.info('Checking timestamp')
+        LOG.info('Checking timestamp...')
         timestamp2 = self.get_timestamp(floating_ip['ip'],
                                         dev_name=vdev_name,
                                         private_key=keypair['private_key'])
         self.assertEqual(timestamp, timestamp2)
+        LOG.info('End of tests, cleaning...')

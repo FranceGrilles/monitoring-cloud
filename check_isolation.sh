@@ -33,25 +33,26 @@ usage () {
     echo ""
     echo "Exemple : $0 -a tempest-1.conf -b tempest-2.conf"
     echo ""
-    echo "No test was run !|time=0, nb_test=0, nb_tests_ok=0, nb_tests_ko=0, nb_skipped=0"
+    echo "No test was run !|exec_time=0;;;; nb_test=0;;;; nb_tests_ok=0;;;; nb_tests_ko=0;;;; nb_skipped=0;;;;"
     exit 2
 }
 
 runMain () {
+    STATUS=3
     cd "$(dirname "$0")"
     {
     ./check_openstack.sh -c $CONF_FILE_A -- tempest.api.fgcloud.test_user_isolation_setup 2>&1 > /dev/null
     } &
 
     # Wait some time for the VM to get ready
-    sleep 15
+    sleep 1
 
     {
     ./check_openstack.sh -c $CONF_FILE_B -- tempest.api.fgcloud.test_user_isolation_run
-    STATUS=$?
     } &
-
-    wait
+    my_pid=$!
+    wait $my_pid
+    STATUS=$?
     exit $STATUS
 }
 

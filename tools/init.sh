@@ -64,11 +64,11 @@ cd $TEMPEST
 # First upgrade pip and setuptools binaries
 if which sudo > /dev/null ; then
     sudo -H pip install --upgrade pip
-    curl https://bootstrap.pypa.io/ez_setup.py -o - | sudo -H python 
+    sudo -H pip install --upgrade setuptools
 else
     echo "Please run these commands as root :"
     echo "pip install --upgrade pip"
-    echo "curl https://bootstrap.pypa.io/ez_setup.py -o - | python"
+    echo "pip install --upgrade setuptools"
     echo "... and restart this script"
     exit 1
 fi

@@ -19,13 +19,13 @@ import time
 from oslo_log import log as logging
 from tempest.api.compute import base
 from tempest import config
+from tempest.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc
 from tempest import test
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
 file_path = "/tmp/tempest_" + CONF.compute.image_ref
-
 
 class UserIsolationRun(base.BaseV2ComputeTest):
 
@@ -35,7 +35,15 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     def skip_checks(cls):
         super(UserIsolationRun, cls).skip_checks()
         if not CONF.service_available.glance:
-            raise cls.skipException('Glance is not available.')
+            skip_msg = ("%s skipped as Glance is not available" % cls.__name__)
+            raise cls.skipException(skip_msg)
+        if not CONF.service_available.cinder:
+            skip_msg = ("%s skipped as Cinder is not available" % cls.__name__)
+            raise cls.skipException(skip_msg)
+        if not CONF.compute_feature_enabled.snapshot:
+            skip_msg = ("%s skipped as instance snapshotting is not supported"
+                        % cls.__name__)
+            raise cls.skipException(skip_msg)
 
     @classmethod
     def setup_credentials(cls):
@@ -48,16 +56,24 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         super(UserIsolationRun, cls).setup_clients()
         cls.client = cls.os.servers_client
         cls.compute_images_client = cls.os.compute_images_client
-        cls.glance_client = cls.os.image_client
+        cls.image_client = cls.os.image_client
         cls.keypairs_client = cls.os.keypairs_client
         cls.security_client = cls.os.compute_security_groups_client
         cls.rule_client = cls.os.compute_security_group_rules_client
+        cls.volumes_client = cls.os.volumes_client
+        cls.snapshots_client = cls.os.snapshots_extensions_client
 
     @classmethod
     def resource_setup(cls):
         super(UserIsolationRun, cls).resource_setup()
 
-        LOG.info("Waiting for VM to get ready...")
+        LOG.info("Starting VM_Run for some tests...")
+        name = data_utils.rand_name('VM_Run')
+        server = cls.create_test_server(name=name, wait_until='ACTIVE')
+        cls.server_run = cls.client.show_server(server['id'])['server']
+        LOG.info("VM_Run started and active ")
+
+        LOG.info("Waiting for VM_Setup to get ready...")
         while not os.path.exists(file_path):
             time.sleep(3)
 
@@ -70,11 +86,18 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         cls.keypairname = fileinfo['keypairname']
         cls.security_group = fileinfo['security_group']
         cls.rule = fileinfo['rule']
+        cls.volume1 = fileinfo['volume1']
+        cls.metadata = fileinfo['metadata']
+        cls.volume2 = fileinfo['volume2']
+        cls.snapshot = fileinfo['snapshot']
+        cls.attachment = fileinfo['attachment']
 
         LOG.info("Running isolation tests from user B...")
 
     @classmethod
     def resource_cleanup(cls):
+        if hasattr(cls, 'server'):
+            cls.client.delete_server(cls.server_run['id'])
         os.remove(file_path)
         super(UserIsolationRun, cls).resource_cleanup()
 
@@ -104,6 +127,12 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         # A change password request for another user's server should fail
         self.assertRaises(lib_exc.Forbidden, self.client.change_password,
                           self.server['id'], adminPass='newpass')
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('caa72f38-63e4-41ce-bfd8-b134d22e919e')
+    def test_show_password_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.show_password,
+                          self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('088de95a-825c-4773-bf7d-26d9d830f741')
@@ -161,13 +190,6 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         except lib_exc.NotFound:
             self.fail('NotFound')
 
-#        self.assertRaises(lib_exc.Forbidden,
-#                          self.client.show_server_metadata_item,
-#                          self.server['id'], 'meta1')
-#        self.assertRaises(lib_exc.NotFound,
-#                          self.client.show_server_metadata_item,
-#                          self.server['id'], 'meta1')
-
     @test.attr(type=['negative'])
     @test.idempotent_id('197f8b8e-d41d-4060-9266-f60b2e179a26')
     def test_get_metadata_of_alt_account_image_fails(self):
@@ -203,6 +225,13 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           self.server['id'], length=10)
 
     @test.attr(type=['negative'])
+    @test.idempotent_id('7aafc3bd-e664-4f69-b122-6a6e3e551188')
+    def test_get_vnc_console_of_alt_account_server_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.get_vnc_console,
+                          self.server['id'],
+                          type='novnc')
+
+    @test.attr(type=['negative'])
     @test.idempotent_id('3080119d-6fa1-489d-9621-f983aff725ed')
     def test_rebuild_server_for_alt_account_fails(self):
         # A rebuild request for another user's server should fail
@@ -228,4 +257,145 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     def test_delete_server_for_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden, self.client.delete_server,
                           self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('65e47d5a-8bd4-406b-8d19-52c3eba6f65a')
+    def test_start_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.start_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('56e11972-faac-4487-9420-031ee379319c')
+    def test_stop_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.stop_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('7e921ec4-ecec-4a1b-b673-da2f9dc009cc')
+    def test_lock_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.lock_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('68cfdda6-0475-4734-909d-b2fe21987347')
+    def test_unlock_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.unlock_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('41b5975f-e140-4cc9-83af-a83b8b6cf278')
+    def test_pause_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.pause_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('0a1c4f53-fa8a-4ae9-b5ab-e55e539024d1')
+    def test_unpause_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.unpause_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('5af863a1-f10c-4a3a-a3de-2bf3506247f5')
+    def test_suspend_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.suspend_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('4b93e4b9-b33f-4ff1-8cd0-5f1efe20624b')
+    def test_resume_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.resume_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('1aea9960-897f-4273-ae69-bbd9bc45c359')
+    def test_shelve_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.shelve_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('67e59d60-ccfc-443c-ac9b-9bcaf35044b6')
+    def test_unshelve_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.unshelve_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('0309c7ef-27af-4934-9cc0-66b37085b227')
+    def test_shelve_offload_server_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.shelve_offload_server,
+                          self.server['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('1c48d877-6f4b-480e-ab18-5fe26418bc0a')
+    def test_attach_volume_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.attach_volume,
+                          self.server_run['id'],
+                          volumeId=self.volume1['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('46e0198f-52e1-410f-8edc-a287b189d7b7')
+    def test_update_volume_attachment_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.update_attached_volume,
+                          self.server['id'],
+                          attachment_id=self.attachment['id'],
+                          volumeId=self.volume1['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('2074a6b1-5d08-4724-bfc7-61b6247a017e')
+    def test_detach_volume_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.client.detach_volume,
+                          self.server['id'],
+                          self.volume2['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('09cfd067-831a-47fc-ac07-13e05290cf30')
+    def test_create_snapshot_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden,
+                          self.snapshots_client.create_snapshot,
+                          self.volume1['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('e4fb10e9-a017-4c02-8299-bc361cf04828')
+    def test_delete_snapshot_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden,
+                          self.snapshots_client.delete_snapshot,
+                          self.snapshot['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('2cad9a8f-cc65-429c-a7d4-908bd86358f1')
+    def test_get_snapshot_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden,
+                          self.snapshots_client.show_snapshot,
+                          self.snapshot['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('0bce9bd7-4032-4c81-b277-093bb9058219')
+    def test_delete_volume_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden, self.volumes_client.delete_volume,
+                          self.volume1['id'])
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('f9be1ab4-0975-4b6b-ae36-da4e7a576b24')
+    def test_extend_volume_for_alt_account_fails(self):
+        extend_size = int(self.volume1['size']) + 1
+        self.assertRaises(lib_exc.Forbidden, self.volumes_client.extend_volume,
+                          self.volume1['id'],
+                          new_size=extend_size)
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('d279a2c0-f554-4ae9-9a39-2a5caf9fced3')
+    def test_update_volume_metadata_for_alt_account_fails(self):
+        metadata = {'new_meta': 'tempest-volume-metadata'}
+        self.assertRaises(lib_exc.Forbidden,
+                          self.volumes_client.update_volume_metadata,
+                          self.volume1['id'],
+                          metadata)
+
+    @test.attr(type=['negative'])
+    @test.idempotent_id('b4a11b21-72c6-4450-985c-6ea9bd0e6d36')
+    def test_delete_volume_metadata_for_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden,
+                          self.volumes_client.delete_volume_metadata_item,
+                          self.volume1['id'],
+                          'vol_metadata')
+
 # EOF
