@@ -60,8 +60,11 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         cls.keypairs_client = cls.os.keypairs_client
         cls.security_client = cls.os.compute_security_groups_client
         cls.rule_client = cls.os.compute_security_group_rules_client
-        cls.volumes_client = cls.os.volumes_client
         cls.snapshots_client = cls.os.snapshots_extensions_client
+        if CONF.volume_feature_enabled.api_v1:
+            cls.volumes_client = cls.os.volumes_client
+        else:
+            cls.volumes_client = cls.os.volumes_v2_client
 
     @classmethod
     def resource_setup(cls):
