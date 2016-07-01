@@ -12,7 +12,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import time
 from oslo_log import log as logging
 from tempest.common import custom_matchers
 from tempest.common import waiters

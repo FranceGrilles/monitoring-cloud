@@ -12,10 +12,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 import json
 import os.path
-import sys
 import time
 import traceback
 from oslo_log import log as logging
@@ -29,6 +27,7 @@ from tempest import test
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
 file_path = "/tmp/tempest_" + CONF.compute.image_ref
+
 
 class UserIsolationSetup(base.BaseV2ComputeTest):
 
@@ -83,7 +82,6 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         fileinfo['server'] = cls.server
         LOG.info("VM_Setup created and active (%s)" % server['id'])
 
-
         # Create an image
         name = data_utils.rand_name('image')
         body = cls.compute_images_client.create_image(cls.server['id'],
@@ -131,8 +129,8 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         fileinfo['volume1'] = cls.volume1
         fileinfo['metadata'] = cls.metadata
         fileinfo['volume2'] = cls.volume2
-        LOG.info("Volumes created (1:%s / 2:%s)" % 
-                                        (cls.volume1['id'], cls.volume2['id']))
+        LOG.info("Volumes created (1:%s / 2:%s)" %
+                 (cls.volume1['id'], cls.volume2['id']))
 
         # Create a snapshot from volume1
         if not CONF.volume_feature_enabled.snapshot:
@@ -179,7 +177,8 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             cls.client.delete_server(cls.server['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup attachment\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+            LOG.error("Cannot cleanup attachment\n%s\n%s" %
+                      (exc_info[-1], exc_info[-2]))
 
         try:
             if hasattr(cls, 'snapshot'):
@@ -192,8 +191,8 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             pass
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup snapshot\n%s\n%s" % (exc_info[-1], exc_info[-2]))
-
+            LOG.error("Cannot cleanup snapshot\n%s\n%s" %
+                      (exc_info[-1], exc_info[-2]))
         try:
             if hasattr(cls, 'volume1'):
                 if hasattr(cls, 'snapshot'):
@@ -204,7 +203,8 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                                                             cls.volume1['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup volume1\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+            LOG.error("Cannot cleanup volume1\n%s\n%s" %
+                      (exc_info[-1], exc_info[-2]))
 
         try:
             if hasattr(cls, 'volume2'):
@@ -215,21 +215,24 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                                                             cls.volume2['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup volume2\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+            LOG.error("Cannot cleanup volume2\n%s\n%s" %
+                      (exc_info[-1], exc_info[-2]))
 
         try:
             if hasattr(cls, 'image'):
                 cls.compute_images_client.delete_image(cls.image['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup image\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+            LOG.error("Cannot cleanup image\n%s\n%s" %
+                      (exc_info[-1], exc_info[-2]))
 
         try:
             if hasattr(cls, 'keypairname'):
                 cls.keypairs_client.delete_keypair(cls.keypairname)
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup keypairname\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+            LOG.error("Cannot cleanup keypairname\n%s\n%s" %
+                      (exc_info[-1], exc_info[-2]))
 
         try:
             if hasattr(cls, 'security_group'):
@@ -237,7 +240,8 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                                                      cls.security_group['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup security_group\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+            LOG.error("Cannot cleanup security_group\n%s\n%s" %
+                      (exc_info[-1], exc_info[-2]))
 
         try:
             if hasattr(cls, 'server'):
@@ -246,14 +250,16 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             pass
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup server\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+            LOG.error("Cannot cleanup server\n%s\n%s" %
+                      (exc_info[-1], exc_info[-2]))
 
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup file\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+            LOG.error("Cannot cleanup file\n%s\n%s" %
+                      (exc_info[-1], exc_info[-2]))
 
         super(UserIsolationSetup, cls).resource_cleanup()
 

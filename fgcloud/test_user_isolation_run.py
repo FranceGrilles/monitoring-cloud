@@ -28,6 +28,7 @@ CONF = config.CONF
 LOG = logging.getLogger(__name__)
 file_path = "/tmp/tempest_" + CONF.compute.image_ref
 
+
 class UserIsolationRun(base.BaseV2ComputeTest):
 
     credentials = ['primary']
@@ -337,7 +338,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     @test.attr(type=['negative'])
     @test.idempotent_id('46e0198f-52e1-410f-8edc-a287b189d7b7')
     def test_update_volume_attachment_for_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.update_attached_volume,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.update_attached_volume,
                           self.server['id'],
                           attachment_id=self.attachment['id'],
                           volumeId=self.volume1['id'])
