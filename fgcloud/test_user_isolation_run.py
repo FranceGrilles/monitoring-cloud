@@ -15,6 +15,7 @@
 
 import json
 import os.path
+import testtools
 import time
 from oslo_log import log as logging
 from tempest.api.compute import base
@@ -39,10 +40,6 @@ class UserIsolationRun(base.BaseV2ComputeTest):
             raise cls.skipException(skip_msg)
         if not CONF.service_available.cinder:
             skip_msg = ("%s skipped as Cinder is not available" % cls.__name__)
-            raise cls.skipException(skip_msg)
-        if not CONF.compute_feature_enabled.snapshot:
-            skip_msg = ("%s skipped as instance snapshotting is not supported"
-                        % cls.__name__)
             raise cls.skipException(skip_msg)
 
     @classmethod
@@ -70,7 +67,7 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     def resource_setup(cls):
         super(UserIsolationRun, cls).resource_setup()
 
-        LOG.info("Starting VM_Run for some tests...")
+        LOG.info("Starting VM_Run")
         name = data_utils.rand_name('VM_Run')
         server = cls.create_test_server(name=name, wait_until='ACTIVE')
         cls.server_run = cls.client.show_server(server['id'])['server']
@@ -92,7 +89,10 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         cls.volume1 = fileinfo['volume1']
         cls.metadata = fileinfo['metadata']
         cls.volume2 = fileinfo['volume2']
-        cls.snapshot = fileinfo['snapshot']
+        if not CONF.volume_feature_enabled.snapshot:
+            LOG.info("Snapshot skipped as volume snapshotting is not enabled")
+        else:
+            cls.snapshot = fileinfo['snapshot']
         cls.attachment = fileinfo['attachment']
 
         LOG.info("Running isolation tests from user B...")
@@ -350,6 +350,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           self.volume2['id'])
 
     @test.attr(type=['negative'])
+    @testtools.skipUnless(CONF.volume_feature_enabled.snapshot,
+                          'Volume snapshotting is not available.')
     @test.idempotent_id('09cfd067-831a-47fc-ac07-13e05290cf30')
     def test_create_snapshot_for_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,
@@ -357,6 +359,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           self.volume1['id'])
 
     @test.attr(type=['negative'])
+    @testtools.skipUnless(CONF.volume_feature_enabled.snapshot,
+                          'Volume snapshotting is not available.')
     @test.idempotent_id('e4fb10e9-a017-4c02-8299-bc361cf04828')
     def test_delete_snapshot_for_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,
@@ -364,6 +368,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           self.snapshot['id'])
 
     @test.attr(type=['negative'])
+    @testtools.skipUnless(CONF.volume_feature_enabled.snapshot,
+                          'Volume snapshotting is not available.')
     @test.idempotent_id('2cad9a8f-cc65-429c-a7d4-908bd86358f1')
     def test_get_snapshot_for_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,

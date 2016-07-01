@@ -15,11 +15,14 @@
 
 import json
 import os.path
+import sys
 import time
+import traceback
 from oslo_log import log as logging
 from tempest.api.compute import base
 from tempest.common import waiters
 from tempest.common.utils import data_utils
+from tempest.lib import exceptions as lib_exc
 from tempest import config
 from tempest import test
 
@@ -39,10 +42,6 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             raise cls.skipException(skip_msg)
         if not CONF.service_available.cinder:
             skip_msg = ("%s skipped as Cinder is not available" % cls.__name__)
-            raise cls.skipException(skip_msg)
-        if not CONF.compute_feature_enabled.snapshot:
-            skip_msg = ("%s skipped as instance snapshotting is not supported"
-                        % cls.__name__)
             raise cls.skipException(skip_msg)
 
     @classmethod
@@ -77,12 +76,12 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             os.remove(file_path)
 
         # Create a server
-        LOG.info("setting up server...")
+        LOG.info("Starting VM_Setup")
         name = data_utils.rand_name('VM_Setup')
         server = cls.create_test_server(name=name, wait_until='ACTIVE')
         cls.server = cls.client.show_server(server['id'])['server']
         fileinfo['server'] = cls.server
-        LOG.info("VM_Setup created and active")
+        LOG.info("VM_Setup created and active (%s)" % server['id'])
 
 
         # Create an image
@@ -94,13 +93,13 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                                       image_id, 'ACTIVE')
         cls.image = cls.compute_images_client.show_image(image_id)['image']
         fileinfo['image'] = cls.image
-        LOG.info("image created and active")
+        LOG.info("Image created and active (%s)" % image_id)
 
         # Create a keypair
         cls.keypairname = data_utils.rand_name('keypair')
         cls.keypairs_client.create_keypair(name=cls.keypairname)
         fileinfo['keypairname'] = cls.keypairname
-        LOG.info("keypair created")
+        LOG.info("Keypair created (%s)" % cls.keypairname)
 
         # Create a security group
         name = data_utils.rand_name('security')
@@ -108,14 +107,14 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         cls.security_group = cls.security_client.create_security_group(
             name=name, description=description)['security_group']
         fileinfo['security_group'] = cls.security_group
-        LOG.info("security group created")
+        LOG.info("Security group created (%s)" % name)
 
         # Create a security group rule
         cls.rule = cls.rule_client.create_security_group_rule(
             parent_group_id=cls.security_group['id'], ip_protocol='tcp',
             from_port=22, to_port=22)['security_group_rule']
         fileinfo['rule'] = cls.rule
-        LOG.info("security rule created")
+        LOG.info("Security rule created (%s)" % cls.rule['id'])
 
         # Create two volumes
         name = data_utils.rand_name('volume1')
@@ -132,18 +131,22 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         fileinfo['volume1'] = cls.volume1
         fileinfo['metadata'] = cls.metadata
         fileinfo['volume2'] = cls.volume2
-        LOG.info("volumes created")
+        LOG.info("Volumes created (1:%s / 2:%s)" % 
+                                        (cls.volume1['id'], cls.volume2['id']))
 
         # Create a snapshot from volume1
-        name = data_utils.rand_name('snapshot')
-        cls.snapshot = cls.snapshots_client.create_snapshot(
-            volume_id=cls.volume1['id'],
-            display_name=name)['snapshot']
-        waiters.wait_for_snapshot_status(cls.snapshots_client,
-                                         cls.snapshot['id'],
-                                         'available')
-        fileinfo['snapshot'] = cls.snapshot
-        LOG.info("snapshot created")
+        if not CONF.volume_feature_enabled.snapshot:
+            LOG.info("Snapshot skipped as volume snapshotting is not enabled")
+        else:
+            name = data_utils.rand_name('snapshot')
+            cls.snapshot = cls.snapshots_client.create_snapshot(
+                volume_id=cls.volume1['id'],
+                display_name=name)['snapshot']
+            waiters.wait_for_snapshot_status(cls.snapshots_client,
+                                             cls.snapshot['id'],
+                                             'available')
+            fileinfo['snapshot'] = cls.snapshot
+            LOG.info("Snapshot created (%s)" % cls.snapshot['id'])
 
         # Attach volume2 to the server
         cls.attachment = cls.servers_client.attach_volume(
@@ -152,39 +155,106 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         waiters.wait_for_volume_status(cls.volumes_client,
                                        cls.volume2['id'], 'in-use')
         fileinfo['attachment'] = cls.attachment
-        LOG.info("volume attached to server")
+        LOG.info("Volume attached to server")
 
         # Save array information to file
         f = open(file_path, 'w')
         json.dump(fileinfo, f)
         f.close()
-        LOG.info("file created with ids, waiting...")
+        LOG.info("File created with ids, waiting...")
 
     @classmethod
     def resource_cleanup(cls):
-        if hasattr(cls, 'attachment'):
-            cls.client.detach_volume(cls.server['id'], cls.volume2['id'])
-            waiters.wait_for_volume_status(cls.volumes_client,
-                                           cls.volume2['id'], 'available')
-        if hasattr(cls, 'snapshot'):
-            cls.snapshots_client.delete_snapshot(cls.snapshot['id'])
-            cls.snapshots_client.wait_for_resource_deletion(cls.snapshot['id'])
-        if hasattr(cls, 'volume1'):
-            cls.volumes_client.delete_volume(cls.volume1['id'])
-            cls.volumes_client.wait_for_resource_deletion(cls.volume1['id'])
-        if hasattr(cls, 'volume2'):
-            cls.volumes_client.delete_volume(cls.volume2['id'])
-            cls.volumes_client.wait_for_resource_deletion(cls.volume2['id'])
-        if hasattr(cls, 'image'):
-            cls.compute_images_client.delete_image(cls.image['id'])
-        if hasattr(cls, 'keypairname'):
-            cls.keypairs_client.delete_keypair(cls.keypairname)
-        if hasattr(cls, 'security_group'):
-            cls.security_client.delete_security_group(cls.security_group['id'])
-        if hasattr(cls, 'server'):
+
+        try:
+            if hasattr(cls, 'attachment'):
+                cls.client.detach_volume(cls.server['id'], cls.volume2['id'])
+                waiters.wait_for_volume_status(cls.volumes_client,
+                                               cls.volume2['id'], 'available')
+        except lib_exc.NotFound:
+            # The server may be already deleted so does the attachment...
+            pass
+        except lib_exc.Conflict:
+            # Raised when instance is in ERROR state
             cls.client.delete_server(cls.server['id'])
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        except:
+            exc_info = traceback.format_exc().splitlines()
+            LOG.error("Cannot cleanup attachment\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+
+        try:
+            if hasattr(cls, 'snapshot'):
+                waiters.wait_for_volume_status(cls.volumes_client,
+                                               cls.volume1['id'], 'available')
+                cls.snapshots_client.delete_snapshot(cls.snapshot['id'])
+                cls.snapshots_client.wait_for_resource_deletion(
+                                                           cls.snapshot['id'])
+        except (lib_exc.BadRequest, lib_exc.NotFound):
+            pass
+        except:
+            exc_info = traceback.format_exc().splitlines()
+            LOG.error("Cannot cleanup snapshot\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+
+        try:
+            if hasattr(cls, 'volume1'):
+                if hasattr(cls, 'snapshot'):
+                    cls.snapshots_client.wait_for_resource_deletion(
+                                                           cls.snapshot['id'])
+                cls.volumes_client.delete_volume(cls.volume1['id'])
+                cls.volumes_client.wait_for_resource_deletion(
+                                                            cls.volume1['id'])
+        except:
+            exc_info = traceback.format_exc().splitlines()
+            LOG.error("Cannot cleanup volume1\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+
+        try:
+            if hasattr(cls, 'volume2'):
+                waiters.wait_for_volume_status(cls.volumes_client,
+                                               cls.volume2['id'], 'available')
+                cls.volumes_client.delete_volume(cls.volume2['id'])
+                cls.volumes_client.wait_for_resource_deletion(
+                                                            cls.volume2['id'])
+        except:
+            exc_info = traceback.format_exc().splitlines()
+            LOG.error("Cannot cleanup volume2\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+
+        try:
+            if hasattr(cls, 'image'):
+                cls.compute_images_client.delete_image(cls.image['id'])
+        except:
+            exc_info = traceback.format_exc().splitlines()
+            LOG.error("Cannot cleanup image\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+
+        try:
+            if hasattr(cls, 'keypairname'):
+                cls.keypairs_client.delete_keypair(cls.keypairname)
+        except:
+            exc_info = traceback.format_exc().splitlines()
+            LOG.error("Cannot cleanup keypairname\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+
+        try:
+            if hasattr(cls, 'security_group'):
+                cls.security_client.delete_security_group(
+                                                     cls.security_group['id'])
+        except:
+            exc_info = traceback.format_exc().splitlines()
+            LOG.error("Cannot cleanup security_group\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+
+        try:
+            if hasattr(cls, 'server'):
+                cls.client.delete_server(cls.server['id'])
+        except lib_exc.NotFound:
+            pass
+        except:
+            exc_info = traceback.format_exc().splitlines()
+            LOG.error("Cannot cleanup server\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except:
+            exc_info = traceback.format_exc().splitlines()
+            LOG.error("Cannot cleanup file\n%s\n%s" % (exc_info[-1], exc_info[-2]))
+
         super(UserIsolationSetup, cls).resource_cleanup()
 
     @test.idempotent_id('30d8f7d5-84cc-47e1-9ccd-e694ab86b685')
