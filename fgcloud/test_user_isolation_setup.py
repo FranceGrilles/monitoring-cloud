@@ -82,7 +82,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         fileinfo['server'] = cls.server
         LOG.info("VM_Setup created and active (%s)" % server['id'])
 
-        # Create an image
+        # Create an image / server snapshot
         name = data_utils.rand_name('image')
         body = cls.compute_images_client.create_image(cls.server['id'],
                                                       name=name)
@@ -91,7 +91,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                                       image_id, 'ACTIVE')
         cls.image = cls.compute_images_client.show_image(image_id)['image']
         fileinfo['image'] = cls.image
-        LOG.info("Image created and active (%s)" % image_id)
+        LOG.info("Server Snapshot created and active (%s)" % image_id)
 
         # Create a keypair
         cls.keypairname = data_utils.rand_name('keypair')
@@ -144,7 +144,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                                              cls.snapshot['id'],
                                              'available')
             fileinfo['snapshot'] = cls.snapshot
-            LOG.info("Snapshot created (%s)" % cls.snapshot['id'])
+            LOG.info("Volume 1 snapshot created (%s)" % cls.snapshot['id'])
 
         # Attach volume2 to the server
         cls.attachment = cls.servers_client.attach_volume(
@@ -153,7 +153,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         waiters.wait_for_volume_status(cls.volumes_client,
                                        cls.volume2['id'], 'in-use')
         fileinfo['attachment'] = cls.attachment
-        LOG.info("Volume attached to server")
+        LOG.info("Volume 2 attached to server")
 
         # Save array information to file
         f = open(file_path, 'w')
@@ -177,7 +177,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             cls.client.delete_server(cls.server['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup attachment\n%s\n%s" %
+            LOG.warning("Cannot cleanup attachment\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
         try:
@@ -191,7 +191,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             pass
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup snapshot\n%s\n%s" %
+            LOG.warning("Cannot cleanup snapshot\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
         try:
             if hasattr(cls, 'volume1'):
@@ -203,7 +203,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                                                             cls.volume1['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup volume1\n%s\n%s" %
+            LOG.warning("Cannot cleanup volume1\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
         try:
@@ -215,7 +215,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                                                             cls.volume2['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup volume2\n%s\n%s" %
+            LOG.warning("Cannot cleanup volume2\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
         try:
@@ -223,7 +223,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                 cls.compute_images_client.delete_image(cls.image['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup image\n%s\n%s" %
+            LOG.warning("Cannot cleanup image\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
         try:
@@ -231,7 +231,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                 cls.keypairs_client.delete_keypair(cls.keypairname)
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup keypairname\n%s\n%s" %
+            LOG.warning("Cannot cleanup keypairname\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
         try:
@@ -240,7 +240,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                                                      cls.security_group['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup security_group\n%s\n%s" %
+            LOG.warning("Cannot cleanup security_group\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
         try:
@@ -250,7 +250,7 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             pass
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup server\n%s\n%s" %
+            LOG.warning("Cannot cleanup server\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
         try:
@@ -258,13 +258,13 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                 os.remove(file_path)
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.error("Cannot cleanup file\n%s\n%s" %
+            LOG.warning("Cannot cleanup file\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
         super(UserIsolationSetup, cls).resource_cleanup()
 
     @test.idempotent_id('30d8f7d5-84cc-47e1-9ccd-e694ab86b685')
-    def test_wait_for_test_to_terminate(self):
+    def test_wait_for_tests_to_terminate(self):
         while os.path.exists(file_path):
             time.sleep(3)
 
