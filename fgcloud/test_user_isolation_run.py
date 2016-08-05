@@ -81,7 +81,7 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         f.close()
 
         cls.server = fileinfo['server']
-        cls.image = fileinfo['image']
+        cls.server_snapshot = fileinfo['server_snapshot']
         cls.keypairname = fileinfo['keypairname']
         cls.security_group = fileinfo['security_group']
         cls.rule = fileinfo['rule']
@@ -91,7 +91,7 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         if not CONF.volume_feature_enabled.snapshot:
             LOG.info("Snapshot skipped as volume snapshotting is not enabled")
         else:
-            cls.snapshot = fileinfo['snapshot']
+            cls.vol_snapshot = fileinfo['vol_snapshot']
         cls.attachment = fileinfo['attachment']
 
         LOG.info("Running isolation tests from user B...")
@@ -126,29 +126,29 @@ class UserIsolationRun(base.BaseV2ComputeTest):
 # Server
     @test.idempotent_id('1fb19bb3-d40b-49e3-b6f8-04e8ca354067')
     def test_get_server_of_alt_account(self):
-        self.assertTrue(self.client.show_server, self.server['id'])
+        self.assertTrue(self.client.show_server,
+                        self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('1e66dee1-1498-4ebb-9304-b952bf4e3ee3')
     def test_update_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.update_server,
-                          self.server['id'], name='tempest_test_rename')
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.update_server,
+                          self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('5c968a59-aeae-4211-b227-adcc9ecd622c')
     def test_delete_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.delete_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.delete_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('36c0b45f-cac3-4aa3-95aa-6722d697de9b')
     def test_get_server_metadata_of_alt_account_fails(self):
-        try:
-            self.client.show_server_metadata_item
-        except lib_exc.Forbidden:
-            self.fail('Forbidden')
-        except lib_exc.NotFound:
-            self.fail('NotFound')
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.list_server_metadata,
+                          self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('c5011b7a-8e11-4f05-86fe-8e1b8b0ab5b1')
@@ -164,116 +164,138 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     def test_delete_server_metadata_of_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,
                           self.client.delete_server_metadata_item,
-                          self.server['id'], 'meta1')
+                          self.server['id'],
+                          'meta1')
 
     @test.attr(type=['negative'])
     @test.idempotent_id('caa72f38-63e4-41ce-bfd8-b134d22e919e')
     def test_get_server_password_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.show_password,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.show_password,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('6a990add-e4cc-4c99-99f7-b06c5ab88b5f')
     def test_update_server_password_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.change_password,
-                          self.server['id'], adminPass='newpass')
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.change_password,
+                          self.server['id'],
+                          adminPass='newpass')
 
     @test.attr(type=['negative'])
     @test.idempotent_id('0d0f26c4-f69a-4e71-abe8-a342c6975f14')
     def test_get_console_output_of_alt_account_server_fails(self):
         self.assertRaises(lib_exc.Forbidden,
                           self.client.get_console_output,
-                          self.server['id'], length=10)
+                          self.server['id'],
+                          length=10)
 
     @test.attr(type=['negative'])
     @test.idempotent_id('7aafc3bd-e664-4f69-b122-6a6e3e551188')
     def test_get_vnc_console_of_alt_account_server_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.get_vnc_console,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.get_vnc_console,
                           self.server['id'],
                           type='novnc')
 
     @test.attr(type=['negative'])
     @test.idempotent_id('3080119d-6fa1-489d-9621-f983aff725ed')
     def test_rebuild_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.rebuild_server,
-                          self.server['id'], self.image_ref_alt)
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.rebuild_server,
+                          self.server['id'],
+                          self.image_ref_alt)
 
     @test.attr(type=['negative'])
     @test.idempotent_id('827625bb-048d-4cf3-b489-2b36594fb5f8')
     def test_resize_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.resize_server,
-                          self.server['id'], self.flavor_ref_alt)
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.resize_server,
+                          self.server['id'],
+                          self.flavor_ref_alt)
 
     @test.attr(type=['negative'])
     @test.idempotent_id('9df2b0f5-ea2b-41ff-8401-0d1a00dc864a')
     def test_reboot_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.reboot_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.reboot_server,
                           self.server['id'], type='HARD')
 
     @test.attr(type=['negative'])
     @test.idempotent_id('65e47d5a-8bd4-406b-8d19-52c3eba6f65a')
     def test_start_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.start_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.start_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('56e11972-faac-4487-9420-031ee379319c')
     def test_stop_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.stop_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.stop_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('7e921ec4-ecec-4a1b-b673-da2f9dc009cc')
     def test_lock_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.lock_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.lock_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('68cfdda6-0475-4734-909d-b2fe21987347')
     def test_unlock_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.unlock_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.unlock_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('41b5975f-e140-4cc9-83af-a83b8b6cf278')
     def test_pause_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.pause_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.pause_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('0a1c4f53-fa8a-4ae9-b5ab-e55e539024d1')
     def test_unpause_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.unpause_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.unpause_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('5af863a1-f10c-4a3a-a3de-2bf3506247f5')
     def test_suspend_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.suspend_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.suspend_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('4b93e4b9-b33f-4ff1-8cd0-5f1efe20624b')
     def test_resume_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.resume_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.resume_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('1aea9960-897f-4273-ae69-bbd9bc45c359')
     def test_shelve_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.shelve_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.shelve_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('67e59d60-ccfc-443c-ac9b-9bcaf35044b6')
     def test_unshelve_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.unshelve_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.unshelve_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('0309c7ef-27af-4934-9cc0-66b37085b227')
     def test_shelve_offload_server_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.shelve_offload_server,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.shelve_offload_server,
                           self.server['id'])
 
     @test.attr(type=['negative'])
@@ -287,88 +309,108 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     @test.idempotent_id('383c3525-48e9-47b1-9533-1eed490402de')
     def test_get_image_of_alt_account(self):
         self.assertTrue(self.compute_images_client.show_image,
-                        self.image['id'])
+                        CONF.compute.image_ref)
 
     @test.attr(type=['negative'])
     @test.idempotent_id('272698ef-994a-4e94-b187-9d65f2ab731b')
     def test_update_image_of_alt_account_fails(self):
-        return True
+        self.assertRaises(lib_exc.Forbidden,
+                          self.image_client.update_image,
+                          CONF.compute.image_ref)
 
     @test.attr(type=['negative'])
     @test.idempotent_id('794e34e0-3752-4516-8c10-09923bf61e01')
     def test_delete_image_of_alt_account_fails(self):
-        return True
+        self.assertRaises(lib_exc.Forbidden,
+                          self.image_client.delete_image,
+                          CONF.compute.image_ref)
 
-    @test.attr(type=['negative'])
     @test.idempotent_id('197f8b8e-d41d-4060-9266-f60b2e179a26')
-    def test_get_image_metadata_of_alt_account_fails(self):
-        try:
-            self.compute_images_client.show_image_metadata_item(self.image['id'], 'meta1')
-        except lib_exc.Forbidden or lib_exc.NotFound:
-            return True
-        else:
-            return False
+    def test_get_image_metadata_of_alt_account(self):
+        self.assertTrue(self.compute_images_client.list_image_metadata,
+                        CONF.compute.image_ref)
+
+    @test.idempotent_id('537a378c-1aab-4eba-b872-809f7510431f')
+    def test_get_server_snapshot_of_alt_account(self):
+        self.assertTrue(self.compute_images_client.show_image,
+                        self.server_snapshot['id'])
 
     @test.attr(type=['negative'])
-    @test.idempotent_id('16851c0f-4603-4867-8388-8a8e78afc34e')
-    def test_update_image_metadata_of_alt_account_fails(self):
-        return True
+    @test.idempotent_id('e8e5ee2b-904d-4c9d-9765-ae433eecbf6b')
+    def test_update_server_snapshot_of_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden,
+                          self.image_client.update_image,
+                          self.server_snapshot['id'])
 
     @test.attr(type=['negative'])
-    @test.idempotent_id('edb92ce6-b116-472f-9134-335e9195afb6')
-    def test_delete_image_metadata_of_alt_account_fails(self):
-        try:
-            self.compute_images_client.delete_image_metadata_item(self.image['id'], 'meta1')
-        except lib_exc.Forbidden or lib_exc.NotFound:
-            return True
-        else:
-            return False
+    @test.idempotent_id('bf89b4ca-17a9-4474-b3ec-ff5549bde157')
+    def test_delete_server_snapshot_of_alt_account_fails(self):
+        self.assertRaises(lib_exc.Forbidden,
+                          self.image_client.delete_image,
+                          self.server_snapshot['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('3a682f31-9882-411c-91c5-4f4303eb6194')
     def test_get_server_snapshot_metadata_of_alt_account_fails(self):
-        return True
+        self.assertRaises(lib_exc.Forbidden,
+                          self.compute_images_client.list_image_metadata,
+                          self.server_snapshot['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('3185f333-6de3-4c0a-9838-62e67ea39e5e')
     def test_update_server_snapshot_metadata_of_alt_account_fails(self):
-        return True
+        metadata = {'key1': 'alt1', 'key2': 'value2'}
+        self.assertRaises(lib_exc.Forbidden,
+                          self.compute_images_client.update_image_metadata,
+                          self.server_snapshot['id'], metadata)
 
     @test.attr(type=['negative'])
     @test.idempotent_id('898766e0-9774-42a3-ac7f-b9cf96e03aae')
     def test_delete_server_snapshot_metadata_of_alt_account_fails(self):
-        return True
+        self.assertRaises(lib_exc.Forbidden,
+                          self.compute_images_client.delete_image_metadata_item,
+                          self.server_snapshot['id'],
+                          'meta1')
 
     @test.attr(type=['negative'])
     @test.idempotent_id('795eb920-fd89-4c87-abce-fe760bd32a51')
     def test_create_server_from_snapshot_of_alt_account_fails(self):
-        return True
+        name = data_utils.rand_name('VM_From_Snapshot')
+        self.assertRaises(lib_exc.ServerFault,
+                          self.client.create_server,
+                          name=name,
+                          imageRef=self.server_snapshot['id'],
+                          flavorRef=CONF.compute.flavor_ref)
 
 # Volume
     @test.idempotent_id('ee2c468b-1cf2-4d70-abe4-6d13f8d5ad8a')
     def test_get_volume_of_alt_account(self):
-        return True
+        self.assertTrue(self.volumes_client.show_volume,
+                        self.volume1['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('3a7f0ebf-b36d-4899-b607-bcc5e998ed72')
     def test_update_volume_of_alt_account_fails(self):
-        return True
+         self.assertRaises(lib_exc.Forbidden,
+                           self.volumes_client.update_volume,
+                           self.volume1['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('0bce9bd7-4032-4c81-b277-093bb9058219')
     def test_delete_volume_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.volumes_client.delete_volume,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.volumes_client.delete_volume,
                           self.volume1['id'])
 
-    @test.attr(type=['negative'])
     @test.idempotent_id('49c06e08-d56e-48c6-846f-b9256370760b')
-    def test_get_volume_metadata_of_alt_account_fails(self):
-        return True
+    def test_get_volume_metadata_of_alt_account(self):
+        self.assertTrue(self.volumes_client.show_volume_metadata,
+                        self.volume1['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('d279a2c0-f554-4ae9-9a39-2a5caf9fced3')
     def test_update_volume_metadata_of_alt_account_fails(self):
-        metadata = {'new_meta': 'tempest-volume-metadata'}
+        metadata = {'new_meta': data_utils.rand_name('new_metadata')}
         self.assertRaises(lib_exc.Forbidden,
                           self.volumes_client.update_volume_metadata,
                           self.volume1['id'],
@@ -392,7 +434,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     @test.attr(type=['negative'])
     @test.idempotent_id('2074a6b1-5d08-4724-bfc7-61b6247a017e')
     def test_detach_volume_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden, self.client.detach_volume,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.client.detach_volume,
                           self.server['id'],
                           self.volume2['id'])
 
@@ -409,7 +452,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     @test.idempotent_id('f9be1ab4-0975-4b6b-ae36-da4e7a576b24')
     def test_extend_volume_of_alt_account_fails(self):
         extend_size = int(self.volume1['size']) + 1
-        self.assertRaises(lib_exc.Forbidden, self.volumes_client.extend_volume,
+        self.assertRaises(lib_exc.Forbidden,
+                          self.volumes_client.extend_volume,
                           self.volume1['id'],
                           new_size=extend_size)
 
@@ -429,14 +473,16 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     def test_get_volume_snapshot_of_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,
                           self.snapshots_client.show_snapshot,
-                          self.snapshot['id'])
+                          self.vol_snapshot['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('9a9274a8-f385-4c00-b7f9-405e13d8dd74')
     @testtools.skipUnless(CONF.volume_feature_enabled.snapshot,
                           'Volume snapshotting is not available.')
     def test_update_volume_snapshot_of_alt_account_fails(self):
-        return True
+        self.assertRaises(lib_exc.NotFound,
+                          self.image_client.update_image,
+                          self.vol_snapshot['id'])
 
     @test.attr(type=['negative'])
     @testtools.skipUnless(CONF.volume_feature_enabled.snapshot,
@@ -445,6 +491,6 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     def test_delete_volume_snapshot_of_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,
                           self.snapshots_client.delete_snapshot,
-                          self.snapshot['id'])
+                          self.vol_snapshot['id'])
 
 # EOF

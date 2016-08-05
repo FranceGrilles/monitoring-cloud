@@ -18,6 +18,7 @@ import time
 import traceback
 from oslo_log import log as logging
 from tempest.api.compute import base
+#from tempest.common import image as common_image
 from tempest.common import waiters
 from tempest.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc
@@ -45,8 +46,6 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
 
     @classmethod
     def setup_credentials(cls):
-        # No network resources required for this test
-        cls.set_network_resources()
         super(UserIsolationSetup, cls).setup_credentials()
 
     @classmethod
@@ -82,16 +81,16 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         fileinfo['server'] = cls.server
         LOG.info("VM_Setup created and active (%s)" % server['id'])
 
-        # Create an image / server snapshot
-        name = data_utils.rand_name('image')
+        # Create a server snapshot
+        name = data_utils.rand_name('snapshot')
         body = cls.compute_images_client.create_image(cls.server['id'],
                                                       name=name)
-        image_id = data_utils.parse_image_id(body.response['location'])
+        snap_id = data_utils.parse_image_id(body.response['location'])
         waiters.wait_for_image_status(cls.compute_images_client,
-                                      image_id, 'ACTIVE')
-        cls.image = cls.compute_images_client.show_image(image_id)['image']
-        fileinfo['image'] = cls.image
-        LOG.info("Server Snapshot created and active (%s)" % image_id)
+                                      snap_id, 'ACTIVE')
+        cls.snap = cls.compute_images_client.show_image(snap_id)['image']
+        fileinfo['server_snapshot'] = cls.snap
+        LOG.info("Server Snapshot created and active (%s)" % snap_id)
 
         # Create a keypair
         cls.keypairname = data_utils.rand_name('keypair')
@@ -136,15 +135,15 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         if not CONF.volume_feature_enabled.snapshot:
             LOG.info("Snapshot skipped as volume snapshotting is not enabled")
         else:
-            name = data_utils.rand_name('snapshot')
-            cls.snapshot = cls.snapshots_client.create_snapshot(
+            name = data_utils.rand_name('vol_snapshot')
+            cls.vol_snapshot = cls.snapshots_client.create_snapshot(
                 volume_id=cls.volume1['id'],
                 display_name=name)['snapshot']
             waiters.wait_for_snapshot_status(cls.snapshots_client,
-                                             cls.snapshot['id'],
+                                             cls.vol_snapshot['id'],
                                              'available')
-            fileinfo['snapshot'] = cls.snapshot
-            LOG.info("Volume 1 snapshot created (%s)" % cls.snapshot['id'])
+            fileinfo['vol_snapshot'] = cls.vol_snapshot
+            LOG.info("Volume 1 snapshot created (%s)" % cls.vol_snapshot['id'])
 
         # Attach volume2 to the server
         cls.attachment = cls.servers_client.attach_volume(
@@ -181,12 +180,12 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                       (exc_info[-1], exc_info[-2]))
 
         try:
-            if hasattr(cls, 'snapshot'):
+            if hasattr(cls, 'vol_snapshot'):
                 waiters.wait_for_volume_status(cls.volumes_client,
                                                cls.volume1['id'], 'available')
-                cls.snapshots_client.delete_snapshot(cls.snapshot['id'])
+                cls.snapshots_client.delete_snapshot(cls.vol_snapshot['id'])
                 cls.snapshots_client.wait_for_resource_deletion(
-                                                           cls.snapshot['id'])
+                                                        cls.vol_snapshot['id'])
         except (lib_exc.BadRequest, lib_exc.NotFound):
             pass
         except:
@@ -195,12 +194,12 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                       (exc_info[-1], exc_info[-2]))
         try:
             if hasattr(cls, 'volume1'):
-                if hasattr(cls, 'snapshot'):
+                if hasattr(cls, 'vol_snapshot'):
                     cls.snapshots_client.wait_for_resource_deletion(
-                                                           cls.snapshot['id'])
+                                                        cls.vol_snapshot['id'])
                 cls.volumes_client.delete_volume(cls.volume1['id'])
                 cls.volumes_client.wait_for_resource_deletion(
-                                                            cls.volume1['id'])
+                                                        cls.volume1['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
             LOG.warning("Cannot cleanup volume1\n%s\n%s" %
@@ -219,11 +218,11 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
                       (exc_info[-1], exc_info[-2]))
 
         try:
-            if hasattr(cls, 'image'):
-                cls.compute_images_client.delete_image(cls.image['id'])
+            if hasattr(cls, 'snap'):
+                cls.image_client.delete_image(cls.snap['id'])
         except:
             exc_info = traceback.format_exc().splitlines()
-            LOG.warning("Cannot cleanup image\n%s\n%s" %
+            LOG.warning("Cannot cleanup server snapshot\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
         try:
@@ -261,6 +260,10 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
             LOG.warning("Cannot cleanup file\n%s\n%s" %
                       (exc_info[-1], exc_info[-2]))
 
+        try:
+            os.remove(file_path)
+        except:
+            pass
         super(UserIsolationSetup, cls).resource_cleanup()
 
     @test.idempotent_id('30d8f7d5-84cc-47e1-9ccd-e694ab86b685')
