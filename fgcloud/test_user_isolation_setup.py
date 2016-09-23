@@ -82,15 +82,18 @@ class UserIsolationSetup(base.BaseV2ComputeTest):
         LOG.info("VM_Setup created and active (%s)" % server['id'])
 
         # Create a server snapshot
-        name = data_utils.rand_name('snapshot')
-        body = cls.compute_images_client.create_image(cls.server['id'],
-                                                      name=name)
-        snap_id = data_utils.parse_image_id(body.response['location'])
-        waiters.wait_for_image_status(cls.compute_images_client,
-                                      snap_id, 'ACTIVE')
-        cls.snap = cls.compute_images_client.show_image(snap_id)['image']
-        fileinfo['server_snapshot'] = cls.snap
-        LOG.info("Server Snapshot created and active (%s)" % snap_id)
+        if not CONF.compute_feature_enabled.snapshot:
+            LOG.info("Snapshot skipped as instance/image snapshotting is not enabled")
+        else:
+            name = data_utils.rand_name('snapshot')
+            body = cls.compute_images_client.create_image(cls.server['id'],
+                                                          name=name)
+            snap_id = data_utils.parse_image_id(body.response['location'])
+            waiters.wait_for_image_status(cls.compute_images_client,
+                                          snap_id, 'ACTIVE')
+            cls.snap = cls.compute_images_client.show_image(snap_id)['image']
+            fileinfo['server_snapshot'] = cls.snap
+            LOG.info("Server Snapshot created and active (%s)" % snap_id)
 
         # Create a keypair
         cls.keypairname = data_utils.rand_name('keypair')

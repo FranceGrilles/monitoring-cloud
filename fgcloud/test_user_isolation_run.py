@@ -81,7 +81,10 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         f.close()
 
         cls.server = fileinfo['server']
-        cls.server_snapshot = fileinfo['server_snapshot']
+        if not CONF.compute_feature_enabled.snapshot:
+            LOG.info("Snapshot skipped as instance/image snapshotting is not enabled")
+        else:
+            cls.server_snapshot = fileinfo['server_snapshot']
         cls.keypairname = fileinfo['keypairname']
         cls.security_group = fileinfo['security_group']
         cls.rule = fileinfo['rule']
@@ -331,11 +334,15 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                         CONF.compute.image_ref)
 
     @test.idempotent_id('537a378c-1aab-4eba-b872-809f7510431f')
+    @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
+                          'Instance/image snapshotting is not available.')
     def test_get_server_snapshot_of_alt_account(self):
         self.assertTrue(self.compute_images_client.show_image,
                         self.server_snapshot['id'])
 
     @test.attr(type=['negative'])
+    @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
+                          'Instance/image snapshotting is not available.')
     @test.idempotent_id('e8e5ee2b-904d-4c9d-9765-ae433eecbf6b')
     def test_update_server_snapshot_of_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,
@@ -343,6 +350,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           self.server_snapshot['id'])
 
     @test.attr(type=['negative'])
+    @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
+                          'Instance/image snapshotting is not available.')
     @test.idempotent_id('bf89b4ca-17a9-4474-b3ec-ff5549bde157')
     def test_delete_server_snapshot_of_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,
@@ -350,6 +359,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           self.server_snapshot['id'])
 
     @test.attr(type=['negative'])
+    @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
+                          'Instance/image snapshotting is not available.')
     @test.idempotent_id('3a682f31-9882-411c-91c5-4f4303eb6194')
     def test_get_server_snapshot_metadata_of_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,
@@ -357,6 +368,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           self.server_snapshot['id'])
 
     @test.attr(type=['negative'])
+    @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
+                          'Instance/image snapshotting is not available.')
     @test.idempotent_id('3185f333-6de3-4c0a-9838-62e67ea39e5e')
     def test_update_server_snapshot_metadata_of_alt_account_fails(self):
         metadata = {'key1': 'alt1', 'key2': 'value2'}
@@ -365,6 +378,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           self.server_snapshot['id'], metadata)
 
     @test.attr(type=['negative'])
+    @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
+                          'Instance/image snapshotting is not available.')
     @test.idempotent_id('898766e0-9774-42a3-ac7f-b9cf96e03aae')
     def test_delete_server_snapshot_metadata_of_alt_account_fails(self):
         self.assertRaises(lib_exc.Forbidden,
@@ -373,6 +388,8 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           'meta1')
 
     @test.attr(type=['negative'])
+    @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
+                          'Instance/image snapshotting is not available.')
     @test.idempotent_id('795eb920-fd89-4c87-abce-fe760bd32a51')
     def test_create_server_from_snapshot_of_alt_account_fails(self):
         name = data_utils.rand_name('VM_From_Snapshot')
