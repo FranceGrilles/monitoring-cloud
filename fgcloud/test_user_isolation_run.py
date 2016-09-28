@@ -103,7 +103,7 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     def resource_cleanup(cls):
         if hasattr(cls, 'server'):
             cls.client.delete_server(cls.server_run['id'])
-        #os.remove(file_path)
+        os.remove(file_path)
         super(UserIsolationRun, cls).resource_cleanup()
 
 # General
