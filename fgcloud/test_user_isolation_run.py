@@ -408,9 +408,14 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     @test.attr(type=['negative'])
     @test.idempotent_id('3a7f0ebf-b36d-4899-b607-bcc5e998ed72')
     def test_update_volume_of_alt_account_fails(self):
-         self.assertRaises(lib_exc.Forbidden,
-                           self.volumes_client.update_volume,
-                           self.volume1['id'])
+        try:
+            self.volumes_client.update_volume(self.volume1['id'])
+        except lib_exc.Forbidden:
+            pass
+        except lib_exc.NotFound:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @test.idempotent_id('0bce9bd7-4032-4c81-b277-093bb9058219')
@@ -423,9 +428,6 @@ class UserIsolationRun(base.BaseV2ComputeTest):
             pass
         except:
             raise
-#        self.assertRaises(lib_exc.Forbidden,
-#                          self.volumes_client.delete_volume,
-#                          self.volume1['id'])
 
     @test.idempotent_id('49c06e08-d56e-48c6-846f-b9256370760b')
     def test_get_volume_metadata_of_alt_account(self):
@@ -436,10 +438,15 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     @test.idempotent_id('d279a2c0-f554-4ae9-9a39-2a5caf9fced3')
     def test_update_volume_metadata_of_alt_account_fails(self):
         metadata = {'new_meta': data_utils.rand_name('new_metadata')}
-        self.assertRaises(lib_exc.Forbidden,
-                          self.volumes_client.update_volume_metadata,
-                          self.volume1['id'],
-                          metadata)
+        try:
+            self.volumes_client.update_volume_metadata(self.volume1['id'],
+                                                       metadata)
+        except lib_exc.Forbidden:
+            pass
+        except lib_exc.NotFound:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @test.idempotent_id('b4a11b21-72c6-4450-985c-6ea9bd0e6d36')
@@ -453,10 +460,6 @@ class UserIsolationRun(base.BaseV2ComputeTest):
             pass
         except:
             raise
-#        self.assertRaises(lib_exc.Forbidden,
-#                          self.volumes_client.delete_volume_metadata_item,
-#                          self.volume1['id'],
-#                          'vol_metadata')
 
     @test.attr(type=['negative'])
     @test.idempotent_id('1c48d877-6f4b-480e-ab18-5fe26418bc0a')
@@ -470,35 +473,46 @@ class UserIsolationRun(base.BaseV2ComputeTest):
             pass
         except:
             raise
-#        self.assertRaises(lib_exc.Forbidden, self.client.attach_volume,
-#                          self.server_run['id'],
-#                          volumeId=self.volume1['id'])
 
     @test.attr(type=['negative'])
     @test.idempotent_id('2074a6b1-5d08-4724-bfc7-61b6247a017e')
     def test_detach_volume_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden,
-                          self.client.detach_volume,
-                          self.server['id'],
-                          self.volume2['id'])
+        try:
+            self.client.detach_volume(self.server['id'], self.volume2['id'])
+        except lib_exc.Forbidden:
+            pass
+        except lib_exc.NotFound:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @test.idempotent_id('46e0198f-52e1-410f-8edc-a287b189d7b7')
     def test_update_volume_attachment_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden,
-                          self.client.update_attached_volume,
-                          self.server['id'],
-                          attachment_id=self.attachment['id'],
-                          volumeId=self.volume1['id'])
+        try:
+            self.client.update_attached_volume(self.server['id'],
+                                        attachment_id=self.attachment['id'],
+                                        volumeId=self.volume1['id'])
+        except lib_exc.Forbidden:
+            pass
+        except lib_exc.NotFound:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @test.idempotent_id('f9be1ab4-0975-4b6b-ae36-da4e7a576b24')
     def test_extend_volume_of_alt_account_fails(self):
         extend_size = int(self.volume1['size']) + 1
-        self.assertRaises(lib_exc.Forbidden,
-                          self.volumes_client.extend_volume,
-                          self.volume1['id'],
-                          new_size=extend_size)
+        try:
+            self.volumes_client.extend_volume(self.volume1['id'],
+                                              new_size=extend_size)
+        except lib_exc.Forbidden:
+            pass
+        except lib_exc.NotFound:
+            pass    
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @testtools.skipUnless(CONF.volume_feature_enabled.snapshot,
@@ -513,27 +527,34 @@ class UserIsolationRun(base.BaseV2ComputeTest):
             pass
         except:
             raise
-#        self.assertRaises(lib_exc.Forbidden,
-#                          self.snapshots_client.create_snapshot,
-#                          self.volume1['id'])
 
     @test.attr(type=['negative'])
     @testtools.skipUnless(CONF.volume_feature_enabled.snapshot,
                           'Volume snapshotting is not available.')
     @test.idempotent_id('2cad9a8f-cc65-429c-a7d4-908bd86358f1')
     def test_get_volume_snapshot_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden,
-                          self.snapshots_client.show_snapshot,
-                          self.vol_snapshot['id'])
+        try:
+            self.snapshots_client.show_snapshot(self.vol_snapshot['id'])
+        except lib_exc.NotFound:
+            pass
+        except lib_exc.Forbidden:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @test.idempotent_id('9a9274a8-f385-4c00-b7f9-405e13d8dd74')
     @testtools.skipUnless(CONF.volume_feature_enabled.snapshot,
                           'Volume snapshotting is not available.')
     def test_update_volume_snapshot_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.NotFound,
-                          self.image_client.update_image,
-                          self.vol_snapshot['id'])
+        try:
+            self.image_client.update_image(self.vol_snapshot['id'])
+        except lib_exc.NotFound:
+            pass
+        except lib_exc.Forbidden:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @testtools.skipUnless(CONF.volume_feature_enabled.snapshot,
