@@ -18,7 +18,6 @@ import time
 import traceback
 from oslo_log import log as logging
 from tempest.api.compute import base
-#from tempest.common import image as common_image
 from tempest.common import waiters
 from tempest.common.utils import data_utils
 from tempest.lib import exceptions as lib_exc
