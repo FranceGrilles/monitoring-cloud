@@ -345,9 +345,14 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           'Instance/image snapshotting is not available.')
     @test.idempotent_id('e8e5ee2b-904d-4c9d-9765-ae433eecbf6b')
     def test_update_server_snapshot_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden,
-                          self.image_client.update_image,
-                          self.server_snapshot['id'])
+        try:
+            self.image_client.update_image(self.server_snapshot['id'])
+        except lib_exc.Forbidden:
+            pass
+        except lib_exc.NotFound:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
@@ -363,9 +368,15 @@ class UserIsolationRun(base.BaseV2ComputeTest):
                           'Instance/image snapshotting is not available.')
     @test.idempotent_id('3a682f31-9882-411c-91c5-4f4303eb6194')
     def test_get_server_snapshot_metadata_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden,
-                          self.compute_images_client.list_image_metadata,
-                          self.server_snapshot['id'])
+        try:
+            self.compute_images_client.list_image_metadata(
+                                                self.server_snapshot['id'])
+        except lib_exc.Forbidden:
+            pass
+        except lib_exc.NotFound:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
@@ -373,19 +384,31 @@ class UserIsolationRun(base.BaseV2ComputeTest):
     @test.idempotent_id('3185f333-6de3-4c0a-9838-62e67ea39e5e')
     def test_update_server_snapshot_metadata_of_alt_account_fails(self):
         metadata = {'key1': 'alt1', 'key2': 'value2'}
-        self.assertRaises(lib_exc.Forbidden,
-                          self.compute_images_client.update_image_metadata,
-                          self.server_snapshot['id'], metadata)
+        try:
+            self.compute_images_client.update_image_metadata(
+                                                   self.server_snapshot['id'],
+                                                   metadata)
+        except lib_exc.Forbidden:
+            pass
+        except lib_exc.NotFound:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
                           'Instance/image snapshotting is not available.')
     @test.idempotent_id('898766e0-9774-42a3-ac7f-b9cf96e03aae')
     def test_delete_server_snapshot_metadata_of_alt_account_fails(self):
-        self.assertRaises(lib_exc.Forbidden,
-                          self.compute_images_client.delete_image_metadata_item,
-                          self.server_snapshot['id'],
-                          'meta1')
+        try:
+            self.compute_images_client.delete_image_metadata_item(
+                                        self.server_snapshot['id'],'meta1')
+        except lib_exc.Forbidden:
+            pass
+        except lib_exc.NotFound:
+            pass
+        except:
+            raise
 
     @test.attr(type=['negative'])
     @testtools.skipUnless(CONF.compute_feature_enabled.snapshot,
