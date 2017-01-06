@@ -510,7 +510,7 @@ class UserIsolationRun(base.BaseV2ComputeTest):
         except lib_exc.Forbidden:
             pass
         except lib_exc.NotFound:
-            pass    
+            pass
         except:
             raise
 
