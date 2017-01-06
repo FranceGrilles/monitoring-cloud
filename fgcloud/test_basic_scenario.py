@@ -12,10 +12,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import time
 from oslo_log import log as logging
 from tempest.common import custom_matchers
 from tempest.common import waiters
+from tempest.common.utils import data_utils
 from tempest import config
 from tempest import exceptions
 from tempest.scenario import manager
@@ -130,7 +130,8 @@ class TestBasicScenario(manager.ScenarioTest):
 
         # Create and boot server
         LOG.info('Creating server...')
-        server = self.create_server(image_id=image,
+        name = data_utils.rand_name("TestBasicScenario")
+        server = self.create_server(name=name, image_id=image,
                                     key_name=keypair['name'],
                                     wait_until='ACTIVE')
         servers = self.nova_list()
